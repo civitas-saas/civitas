@@ -139,6 +139,11 @@ returns public.organizations security definer as $$
 declare
   new_org public.organizations;
 begin
+  -- Ensure user profile exists in user_profiles to prevent foreign key violations (healing fallback)
+  insert into public.user_profiles (id, full_name)
+  values (auth.uid(), coalesce(auth.jwt()->'user_metadata'->>'full_name', 'Administrador'))
+  on conflict (id) do nothing;
+
   -- 1. Insert organization
   insert into public.organizations (name, slug)
   values (org_name, org_slug)
