@@ -74,6 +74,10 @@ create policy "Admins can update their own tenant"
         and public.current_user_role() = 'admin'
     );
 
+create policy "Authenticated users can insert tenants"
+    on public.tenants for insert
+    with check (auth.role() = 'authenticated');
+
 -- 6. Profiles Policies
 create policy "Users can view profiles in their tenant"
     on public.profiles for select
