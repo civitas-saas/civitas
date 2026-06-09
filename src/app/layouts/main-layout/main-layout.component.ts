@@ -24,9 +24,23 @@ export class MainLayoutComponent {
   public isProfileDropdownOpen = signal<boolean>(false);
 
   // Dynamic signals from service
-  public tenantName = () => this.supabaseService.currentTenant()?.name || 'Carregando...';
+  public organizationName = () => this.supabaseService.currentOrganization()?.name || 'Carregando...';
   public userEmail = () => this.supabaseService.currentUser()?.email || '';
   public userFullName = () => this.supabaseService.currentProfile()?.full_name || 'Usuário';
+  public userRole = () => {
+    const role = this.supabaseService.currentMember()?.role;
+    if (!role) return 'Membro';
+    // Format to capitalized/Portuguese equivalent
+    const roleMapping: Record<string, string> = {
+      'admin': 'Administrador',
+      'gestor': 'Gestor de Projetos',
+      'financeiro': 'Financeiro',
+      'auditor': 'Auditor',
+      'patrocinador': 'Patrocinador',
+      'fornecedor': 'Fornecedor'
+    };
+    return roleMapping[role] || role;
+  };
 
   public menuItems: MenuItem[] = [
     { label: 'Dashboard', route: '/dashboard', icon: 'dashboard' },

@@ -1,140 +1,172 @@
--- Civitas Supabase PostgreSQL Schema & RLS Policies
+-- Civitas Supabase PostgreSQL Schema & RLS Policies (Normalized Organizations & Roles)
 -- Execute this script in the Supabase SQL Editor (https://supabase.com/dashboard/project/ntqzjjfwqralwbkqktim/sql)
+
+-- Clean up old schema
+drop table if exists public.prestacao_contas cascade;
+drop table if exists public.evidencias cascade;
+drop table if exists public.fornecedores cascade;
+drop table if exists public.recursos cascade;
+drop table if exists public.editais cascade;
+drop table if exists public.projects cascade;
+drop table if exists public.profiles cascade;
+drop table if exists public.tenants cascade;
+
+drop trigger if exists on_auth_user_created on auth.users;
+drop function if exists public.handle_new_user cascade;
+drop function if exists public.current_user_tenant_id cascade;
+drop function if exists public.current_user_role cascade;
+drop function if exists public.create_new_tenant cascade;
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
--- 1. Tenants Table (NGOs/Organizations)
-create table if not exists public.tenants (
+-- 1. Create Roles lookup table
+create table public.roles (
+    name text primary key,
+    description text
+);
+
+-- Insert initial profiles/roles
+insert into public.roles (name, description) values
+    ('admin', 'Administrador da Organização - Acesso total'),
+    ('gestor', 'Gestor de Projetos - Gerencia editais, captações e projetos'),
+    ('financeiro', 'Financeiro - Controle de prestação de contas e recursos'),
+    ('auditor', 'Auditor - Valida evidências e prestação de contas'),
+    ('patrocinador', 'Patrocinador - Visualiza portal de transparência e relatórios de projetos parceiros'),
+    ('fornecedor', 'Fornecedor - Apenas visualização de dados vinculados e emissão de notas/comprovantes');
+
+-- 2. Create Organizations Table
+create table public.organizations (
     id uuid default gen_random_uuid() primary key,
     name text not null,
     slug text not null unique,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Enable RLS on Tenants
-alter table public.tenants enable row level security;
+alter table public.organizations enable row level security;
 
--- 2. Profiles Table (User settings & tenant assignment)
-create table if not exists public.profiles (
+-- 3. Create User Profiles Table
+create table public.user_profiles (
     id uuid references auth.users on delete cascade primary key,
-    tenant_id uuid references public.tenants(id) on delete set null,
     full_name text,
-    role text default 'member'::text,
     updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Enable RLS on Profiles
-alter table public.profiles enable row level security;
+alter table public.user_profiles enable row level security;
 
--- 3. Automatic Profile Creation Trigger on Sign-Up
+-- 4. Create Organization Members Table (Mapping users to organizations and roles)
+create table public.organization_members (
+    id uuid default gen_random_uuid() primary key,
+    organization_id uuid references public.organizations(id) on delete cascade not null,
+    user_id uuid references public.user_profiles(id) on delete cascade not null,
+    role text references public.roles(name) on delete restrict not null,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+    constraint unique_organization_member unique (organization_id, user_id)
+);
+
+alter table public.organization_members enable row level security;
+
+-- 5. Helper Functions & Triggers
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name, role)
+  insert into public.user_profiles (id, full_name)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'full_name', ''),
-    coalesce(new.raw_user_meta_data->>'role', 'member')
+    coalesce(new.raw_user_meta_data->>'full_name', '')
   );
   return new;
 end;
 $$ language plpgsql security definer;
 
--- Remove the trigger if it exists and recreate
-drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- 4. RLS Helper functions
-create or replace function public.current_user_tenant_id()
+-- Security helper functions
+create or replace function public.current_user_organization_id()
 returns uuid security definer as $$
 begin
-  return (select tenant_id from public.profiles where id = auth.uid());
+  return (select organization_id from public.organization_members where user_id = auth.uid() limit 1);
 end;
 $$ language plpgsql;
 
 create or replace function public.current_user_role()
 returns text security definer as $$
 begin
-  return (select role from public.profiles where id = auth.uid());
+  return (select role from public.organization_members where user_id = auth.uid() limit 1);
 end;
 $$ language plpgsql;
 
--- Helper function to register a tenant and link current user in a single secure Transaction
-create or replace function public.create_new_tenant(tenant_name text, tenant_slug text)
-returns public.tenants security definer as $$
-declare
-  new_tenant public.tenants;
-begin
-  -- 1. Insert tenant
-  insert into public.tenants (name, slug)
-  values (tenant_name, tenant_slug)
-  returning * into new_tenant;
+-- 6. RLS Policies
+-- Organizations Policies
+create policy "Users can view their organization"
+    on public.organizations for select
+    using (id = public.current_user_organization_id());
 
-  -- 2. Update current user profile
-  update public.profiles
-  set tenant_id = new_tenant.id, role = 'admin'
-  where id = auth.uid();
+create policy "Admins can update their organization"
+    on public.organizations for update
+    using (id = public.current_user_organization_id() and public.current_user_role() = 'admin');
 
-  return new_tenant;
-end;
-$$ language plpgsql;
-
--- 5. Tenants Policies
-create policy "Users can view their own tenant"
-    on public.tenants for select
-    using (id = public.current_user_tenant_id());
-
-create policy "Admins can update their own tenant"
-    on public.tenants for update
+-- User Profiles Policies
+create policy "Users can view profiles in their organization"
+    on public.user_profiles for select
     using (
-        id = public.current_user_tenant_id() 
-        and public.current_user_role() = 'admin'
+        id = auth.uid() 
+        or exists (
+            select 1 from public.organization_members 
+            where user_id = public.user_profiles.id 
+              and organization_id = public.current_user_organization_id()
+        )
     );
-
-create policy "Authenticated users can insert tenants"
-    on public.tenants for insert
-    with check (auth.role() = 'authenticated');
-
--- 6. Profiles Policies
-create policy "Users can view profiles in their tenant"
-    on public.profiles for select
-    using (tenant_id = public.current_user_tenant_id() or auth.uid() = id);
 
 create policy "Users can update their own profile"
-    on public.profiles for update
+    on public.user_profiles for update
     using (auth.uid() = id);
 
-create policy "Admins can insert/delete profiles in their tenant"
-    on public.profiles for all
-    using (
-        tenant_id = public.current_user_tenant_id() 
-        and public.current_user_role() = 'admin'
-    );
+-- Organization Members Policies
+create policy "Members can view organization memberships"
+    on public.organization_members for select
+    using (organization_id = public.current_user_organization_id());
 
--- 7. Module Tables with Multi-Tenant RLS
+create policy "Admins can manage organization memberships"
+    on public.organization_members for all
+    using (organization_id = public.current_user_organization_id() and public.current_user_role() = 'admin');
 
--- Projects Table
-create table if not exists public.projects (
+-- 7. Secure Transaction RPC for registering organization and setting admin member
+create or replace function public.create_new_organization(org_name text, org_slug text)
+returns public.organizations security definer as $$
+declare
+  new_org public.organizations;
+begin
+  -- 1. Insert organization
+  insert into public.organizations (name, slug)
+  values (org_name, org_slug)
+  returning * into new_org;
+
+  -- 2. Create membership as 'admin'
+  insert into public.organization_members (organization_id, user_id, role)
+  values (new_org.id, auth.uid(), 'admin');
+
+  return new_org;
+end;
+$$ language plpgsql;
+
+-- 8. Modules Tables (with renamed organization_id references and RLS)
+create table public.projects (
     id uuid default gen_random_uuid() primary key,
-    tenant_id uuid default public.current_user_tenant_id() references public.tenants(id) on delete cascade not null,
+    organization_id uuid default public.current_user_organization_id() references public.organizations(id) on delete cascade not null,
     name text not null,
     description text,
     status text default 'planning'::text,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 alter table public.projects enable row level security;
+create policy "Members can manage projects" on public.projects for all using (organization_id = public.current_user_organization_id());
 
-create policy "Tenant members can manage projects"
-    on public.projects for all
-    using (tenant_id = public.current_user_tenant_id());
-
--- Editais Table (Grants/Proposals)
-create table if not exists public.editais (
+create table public.editais (
     id uuid default gen_random_uuid() primary key,
-    tenant_id uuid default public.current_user_tenant_id() references public.tenants(id) on delete cascade not null,
+    organization_id uuid default public.current_user_organization_id() references public.organizations(id) on delete cascade not null,
     title text not null,
     sponsor text not null,
     value numeric(12,2),
@@ -143,15 +175,11 @@ create table if not exists public.editais (
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 alter table public.editais enable row level security;
+create policy "Members can manage editais" on public.editais for all using (organization_id = public.current_user_organization_id());
 
-create policy "Tenant members can manage editais"
-    on public.editais for all
-    using (tenant_id = public.current_user_tenant_id());
-
--- Captação de Recursos Table (Fundraising)
-create table if not exists public.recursos (
+create table public.recursos (
     id uuid default gen_random_uuid() primary key,
-    tenant_id uuid default public.current_user_tenant_id() references public.tenants(id) on delete cascade not null,
+    organization_id uuid default public.current_user_organization_id() references public.organizations(id) on delete cascade not null,
     source text not null,
     amount numeric(12,2) not null,
     date date default current_date not null,
@@ -159,15 +187,11 @@ create table if not exists public.recursos (
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 alter table public.recursos enable row level security;
+create policy "Members can manage recursos" on public.recursos for all using (organization_id = public.current_user_organization_id());
 
-create policy "Tenant members can manage recursos"
-    on public.recursos for all
-    using (tenant_id = public.current_user_tenant_id());
-
--- Fornecedores Table (Suppliers)
-create table if not exists public.fornecedores (
+create table public.fornecedores (
     id uuid default gen_random_uuid() primary key,
-    tenant_id uuid default public.current_user_tenant_id() references public.tenants(id) on delete cascade not null,
+    organization_id uuid default public.current_user_organization_id() references public.organizations(id) on delete cascade not null,
     name text not null,
     document text,
     email text,
@@ -175,15 +199,11 @@ create table if not exists public.fornecedores (
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 alter table public.fornecedores enable row level security;
+create policy "Members can manage fornecedores" on public.fornecedores for all using (organization_id = public.current_user_organization_id());
 
-create policy "Tenant members can manage fornecedores"
-    on public.fornecedores for all
-    using (tenant_id = public.current_user_tenant_id());
-
--- Evidências Table (Evidences)
-create table if not exists public.evidencias (
+create table public.evidencias (
     id uuid default gen_random_uuid() primary key,
-    tenant_id uuid default public.current_user_tenant_id() references public.tenants(id) on delete cascade not null,
+    organization_id uuid default public.current_user_organization_id() references public.organizations(id) on delete cascade not null,
     project_id uuid references public.projects(id) on delete cascade,
     title text not null,
     description text,
@@ -191,15 +211,11 @@ create table if not exists public.evidencias (
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 alter table public.evidencias enable row level security;
+create policy "Members can manage evidencias" on public.evidencias for all using (organization_id = public.current_user_organization_id());
 
-create policy "Tenant members can manage evidencias"
-    on public.evidencias for all
-    using (tenant_id = public.current_user_tenant_id());
-
--- Prestação de Contas Table (Financial Reports)
-create table if not exists public.prestacao_contas (
+create table public.prestacao_contas (
     id uuid default gen_random_uuid() primary key,
-    tenant_id uuid default public.current_user_tenant_id() references public.tenants(id) on delete cascade not null,
+    organization_id uuid default public.current_user_organization_id() references public.organizations(id) on delete cascade not null,
     project_id uuid references public.projects(id) on delete cascade,
     title text not null,
     type text not null, -- 'revenue' or 'expense'
@@ -209,7 +225,4 @@ create table if not exists public.prestacao_contas (
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 alter table public.prestacao_contas enable row level security;
-
-create policy "Tenant members can manage prestacao_contas"
-    on public.prestacao_contas for all
-    using (tenant_id = public.current_user_tenant_id());
+create policy "Members can manage prestacao_contas" on public.prestacao_contas for all using (organization_id = public.current_user_organization_id());

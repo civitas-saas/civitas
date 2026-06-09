@@ -5,37 +5,37 @@ import { Router } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 
 @Component({
-  selector: 'app-register-tenant',
+  selector: 'app-register-organization',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './register-tenant.component.html',
-  styleUrl: './register-tenant.component.css'
+  templateUrl: './register-organization.component.html',
+  styleUrl: './register-organization.component.css'
 })
-export class RegisterTenantComponent {
+export class RegisterOrganizationComponent {
   private fb = inject(FormBuilder);
   private supabaseService = inject(SupabaseService);
   private router = inject(Router);
 
-  public tenantForm: FormGroup;
+  public orgForm: FormGroup;
   public errorMessage = signal<string | null>(null);
   public isLoading = signal<boolean>(false);
 
   constructor() {
-    this.tenantForm = this.fb.group({
+    this.orgForm = this.fb.group({
       orgName: ['', [Validators.required, Validators.minLength(3)]]
     });
   }
 
   async onSubmit() {
-    if (this.tenantForm.invalid) {
-      this.tenantForm.markAllAsTouched();
+    if (this.orgForm.invalid) {
+      this.orgForm.markAllAsTouched();
       return;
     }
 
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
-    const { orgName } = this.tenantForm.value;
+    const { orgName } = this.orgForm.value;
     const userId = this.supabaseService.currentUser()?.id;
 
     if (!userId) {
@@ -46,8 +46,7 @@ export class RegisterTenantComponent {
     }
 
     try {
-      await this.supabaseService.registerTenant(orgName, userId);
-      // Success, route guard will now pass
+      await this.supabaseService.registerOrganization(orgName, userId);
       this.router.navigate(['/']);
     } catch (error: any) {
       console.error('Erro ao cadastrar organização:', error);

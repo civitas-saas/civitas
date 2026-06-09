@@ -13,15 +13,16 @@
       </div>
     </div>
 
-    <!-- Active Tenant (NGO) info -->
+    <!-- Active Organization info -->
     <div class="px-4 py-3 mx-3 my-4 rounded-xl bg-slate-950/50 border border-slate-800/40">
-      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">ONG Ativa</p>
+      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Organização</p>
       <div class="flex items-center gap-2 mt-1">
-        <div class="w-6 h-6 rounded-full bg-accent-500/10 text-accent-400 flex items-center justify-center text-xs font-semibold">
-          {{ tenantName().charAt(0).toUpperCase() }}
+        <div class="w-6 h-6 rounded-full bg-accent-500/10 text-accent-400 flex items-center justify-center text-xs font-semibold shrink-0">
+          {{ organizationName().charAt(0).toUpperCase() }}
         </div>
-        <span class="text-sm font-semibold truncate text-slate-200">{{ tenantName() }}</span>
+        <span class="text-sm font-semibold truncate text-slate-200">{{ organizationName() }}</span>
       </div>
+      <p class="text-[9px] uppercase tracking-wider text-primary-400 font-bold mt-2 border-t border-slate-800/50 pt-1.5">{{ userRole() }}</p>
     </div>
 
     <!-- Nav list -->
@@ -77,15 +78,16 @@
       </button>
     </div>
 
-    <!-- Active Tenant (NGO) info -->
+    <!-- Active Organization info -->
     <div class="px-4 py-3 mx-3 my-4 rounded-xl bg-slate-950/50 border border-slate-800/40">
-      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">ONG Ativa</p>
+      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Organização</p>
       <div class="flex items-center gap-2 mt-1">
-        <div class="w-6 h-6 rounded-full bg-accent-500/10 text-accent-400 flex items-center justify-center text-xs font-semibold">
-          {{ tenantName().charAt(0).toUpperCase() }}
+        <div class="w-6 h-6 rounded-full bg-accent-500/10 text-accent-400 flex items-center justify-center text-xs font-semibold shrink-0">
+          {{ organizationName().charAt(0).toUpperCase() }}
         </div>
-        <span class="text-sm font-semibold truncate text-slate-200">{{ tenantName() }}</span>
+        <span class="text-sm font-semibold truncate text-slate-200">{{ organizationName() }}</span>
       </div>
+      <p class="text-[9px] uppercase tracking-wider text-primary-400 font-bold mt-2 border-t border-slate-800/50 pt-1.5">{{ userRole() }}</p>
     </div>
 
     <!-- Nav list -->
@@ -150,7 +152,7 @@
           <button (click)="toggleProfileDropdown()" class="flex items-center gap-3 focus:outline-none group">
             <div class="flex flex-col text-right hidden sm:flex">
               <span class="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">{{ userFullName() }}</span>
-              <span class="text-xs text-slate-500">{{ userEmail() }}</span>
+              <span class="text-xs text-slate-500 font-medium">{{ userRole() }}</span>
             </div>
             <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center font-bold text-white shadow-md shadow-primary-500/10">
               {{ userFullName().charAt(0).toUpperCase() }}
@@ -163,7 +165,7 @@
             <div class="px-4 py-3 border-b border-slate-800">
               <p class="text-xs text-slate-500">Logado como</p>
               <p class="font-semibold text-slate-200 truncate">{{ userFullName() }}</p>
-              <p class="text-xs text-slate-400 truncate mt-0.5">{{ userEmail() }}</p>
+              <p class="text-xs text-slate-400 truncate mt-0.5">{{ userRole() }} • {{ userEmail() }}</p>
             </div>
             
             <a routerLink="/dashboard" (click)="isProfileDropdownOpen.set(false)" class="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-slate-100 hover:bg-slate-800/80 transition-colors">

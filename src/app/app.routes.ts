@@ -13,8 +13,8 @@ export const routes: Routes = [
     canActivate: [noAuthGuard]
   },
   {
-    path: 'register-tenant',
-    loadComponent: () => import('./views/auth/register-tenant/register-tenant.component').then(m => m.RegisterTenantComponent),
+    path: 'register-organization',
+    loadComponent: () => import('./views/auth/register-organization/register-organization.component').then(m => m.RegisterOrganizationComponent),
     canActivate: [authGuard]
   },
   {

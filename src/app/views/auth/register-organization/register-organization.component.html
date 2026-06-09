@@ -21,7 +21,7 @@
     <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl shadow-2xl p-8">
       
       <h2 class="text-xl font-bold text-slate-100 mb-2 text-center">Cadastre sua Organização</h2>
-      <p class="text-slate-400 text-xs text-center mb-6">Para continuar, precisamos criar o espaço de trabalho da sua ONG ou projeto social.</p>
+      <p class="text-slate-400 text-xs text-center mb-6">Para continuar, precisamos criar a organização da sua ONG, instituto ou projeto social.</p>
 
       <!-- Error Alert -->
       <div *ngIf="errorMessage()" class="mb-5 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-200 text-sm flex items-start gap-2.5">
@@ -30,25 +30,25 @@
       </div>
 
       <!-- Form -->
-      <form [formGroup]="tenantForm" (ngSubmit)="onSubmit()" class="space-y-5">
+      <form [formGroup]="orgForm" (ngSubmit)="onSubmit()" class="space-y-5">
         
         <!-- Org Name Input -->
         <div>
-          <label for="orgName" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nome da ONG / Instituto</label>
+          <label for="orgName" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nome da Organização</label>
           <div class="relative">
             <input 
               id="orgName"
               type="text"
               formControlName="orgName"
-              placeholder="Ex: Instituto Mão Amiga"
-              [ngClass]="{'border-red-500/50 focus:border-red-500': tenantForm.get('orgName')?.touched && tenantForm.get('orgName')?.invalid, 'border-slate-800 focus:border-primary-500': !(tenantForm.get('orgName')?.touched && tenantForm.get('orgName')?.invalid)}"
+              placeholder="Ex: Instituto Mão Amiga ou ONG Civitas"
+              [ngClass]="{'border-red-500/50 focus:border-red-500': orgForm.get('orgName')?.touched && orgForm.get('orgName')?.invalid, 'border-slate-800 focus:border-primary-500': !(orgForm.get('orgName')?.touched && orgForm.get('orgName')?.invalid)}"
               class="w-full bg-slate-950/80 text-slate-200 px-4 py-3 rounded-xl border text-sm outline-none transition-all duration-200 placeholder-slate-600 focus:ring-2 focus:ring-primary-500/10"
             />
           </div>
           <!-- Validation errors -->
-          <div *ngIf="tenantForm.get('orgName')?.touched && tenantForm.get('orgName')?.invalid" class="text-red-400 text-xs mt-1.5 px-1">
-            <span *ngIf="tenantForm.get('orgName')?.errors?.['required']">O nome da organização é obrigatório.</span>
-            <span *ngIf="tenantForm.get('orgName')?.errors?.['minlength']">O nome deve ter no mínimo 3 caracteres.</span>
+          <div *ngIf="orgForm.get('orgName')?.touched && orgForm.get('orgName')?.invalid" class="text-red-400 text-xs mt-1.5 px-1">
+            <span *ngIf="orgForm.get('orgName')?.errors?.['required']">O nome da organização é obrigatório.</span>
+            <span *ngIf="orgForm.get('orgName')?.errors?.['minlength']">O nome deve ter no mínimo 3 caracteres.</span>
           </div>
         </div>
 
@@ -63,7 +63,7 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span>{{ isLoading() ? 'Criando Espaço de Trabalho...' : 'Criar e Acessar Painel' }}</span>
+          <span>{{ isLoading() ? 'Criando Organização...' : 'Criar e Acessar Painel' }}</span>
         </button>
 
       </form>

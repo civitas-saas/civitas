@@ -22,7 +22,7 @@ interface Activity {
 export class DashboardComponent {
   private supabaseService = inject(SupabaseService);
 
-  public tenantName = () => this.supabaseService.currentTenant()?.name || 'Organização';
+  public organizationName = () => this.supabaseService.currentOrganization()?.name || 'Organização';
   public userFullName = () => this.supabaseService.currentProfile()?.full_name || 'Usuário';
 
   // Premium mockup data

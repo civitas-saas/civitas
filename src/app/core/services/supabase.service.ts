@@ -11,7 +11,8 @@ export class SupabaseService {
   // State represented as Angular Signals
   public currentUser = signal<User | null>(null);
   public currentProfile = signal<any | null>(null);
-  public currentTenant = signal<any | null>(null);
+  public currentMember = signal<any | null>(null);
+  public currentOrganization = signal<any | null>(null);
   public isLoading = signal<boolean>(true);
 
   constructor() {
@@ -43,19 +44,20 @@ export class SupabaseService {
   private async handleAuthStateChange(session: Session | null) {
     if (session?.user) {
       this.currentUser.set(session.user);
-      await this.loadProfileAndTenant(session.user.id);
+      await this.loadProfileAndOrganization(session.user.id);
     } else {
       this.currentUser.set(null);
       this.currentProfile.set(null);
-      this.currentTenant.set(null);
+      this.currentMember.set(null);
+      this.currentOrganization.set(null);
     }
   }
 
-  private async loadProfileAndTenant(userId: string) {
+  private async loadProfileAndOrganization(userId: string) {
     try {
-      // Load Profile
+      // 1. Load User Profile
       const { data: profile, error: profileError } = await this.supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single();
@@ -63,30 +65,50 @@ export class SupabaseService {
       if (profileError) {
         console.error('Error fetching profile:', profileError);
         this.currentProfile.set(null);
-        this.currentTenant.set(null);
+        this.currentMember.set(null);
+        this.currentOrganization.set(null);
         return;
       }
 
       this.currentProfile.set(profile);
 
-      // Load Tenant if user has one assigned
-      if (profile.tenant_id) {
-        const { data: tenant, error: tenantError } = await this.supabase
-          .from('tenants')
+      // 2. Load Organization Membership (limit to first active one)
+      const { data: member, error: memberError } = await this.supabase
+        .from('organization_members')
+        .select('*')
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle();
+
+      if (memberError) {
+        console.error('Error fetching membership:', memberError);
+        this.currentMember.set(null);
+        this.currentOrganization.set(null);
+        return;
+      }
+
+      if (member) {
+        this.currentMember.set(member);
+
+        // 3. Load Organization Details
+        const { data: org, error: orgError } = await this.supabase
+          .from('organizations')
           .select('*')
-          .eq('id', profile.tenant_id)
+          .eq('id', member.organization_id)
           .single();
 
-        if (tenantError) {
-          console.error('Error fetching tenant:', tenantError);
+        if (orgError) {
+          console.error('Error fetching organization:', orgError);
+          this.currentOrganization.set(null);
         } else {
-          this.currentTenant.set(tenant);
+          this.currentOrganization.set(org);
         }
       } else {
-        this.currentTenant.set(null);
+        this.currentMember.set(null);
+        this.currentOrganization.set(null);
       }
     } catch (e) {
-      console.error('Unexpected error loading profile/tenant:', e);
+      console.error('Unexpected error loading profile/organization:', e);
     }
   }
 
@@ -108,8 +130,7 @@ export class SupabaseService {
       password,
       options: {
         data: {
-          full_name: fullName,
-          role: 'admin' // First user registering the tenant defaults to admin
+          full_name: fullName
         }
       }
     });
@@ -122,12 +143,13 @@ export class SupabaseService {
     if (error) throw error;
     this.currentUser.set(null);
     this.currentProfile.set(null);
-    this.currentTenant.set(null);
+    this.currentMember.set(null);
+    this.currentOrganization.set(null);
   }
 
   // --- Multi-Tenant Actions ---
 
-  async registerTenant(orgName: string, userProfileId: string) {
+  async registerOrganization(orgName: string, userProfileId: string) {
     const slug = orgName
       .toLowerCase()
       .trim()
@@ -137,17 +159,27 @@ export class SupabaseService {
       .replace(/\s+/g, '-') // Replace spaces with -
       .replace(/-+/g, '-'); // Remove duplicate -
 
-    // Call Supabase RPC to create tenant and associate profile in a single Transaction
-    const { data: tenant, error } = await this.supabase.rpc('create_new_tenant', {
-      tenant_name: orgName,
-      tenant_slug: slug
+    // Call Supabase RPC to create organization and associate profile in a single Transaction
+    const { data: org, error } = await this.supabase.rpc('create_new_organization', {
+      org_name: orgName,
+      org_slug: slug
     });
 
     if (error) throw error;
 
-    // Fetch the updated profile to sync local state
+    // Fetch the updated membership to sync local state
+    const { data: member, error: memberError } = await this.supabase
+      .from('organization_members')
+      .select('*')
+      .eq('user_id', userProfileId)
+      .limit(1)
+      .single();
+
+    if (memberError) throw memberError;
+
+    // Fetch profile
     const { data: profile, error: profileError } = await this.supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('*')
       .eq('id', userProfileId)
       .single();
@@ -156,8 +188,9 @@ export class SupabaseService {
 
     // Refresh state signals
     this.currentProfile.set(profile);
-    this.currentTenant.set(tenant);
+    this.currentMember.set(member);
+    this.currentOrganization.set(org);
 
-    return { tenant, profile };
+    return { organization: org, member, profile };
   }
 }
