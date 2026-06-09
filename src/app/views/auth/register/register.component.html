@@ -1,0 +1,122 @@
+<div class="min-h-screen flex items-center justify-center bg-slate-950 px-4 relative overflow-hidden font-sans">
+  
+  <!-- Decorative background glow -->
+  <div class="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-primary-600/10 blur-[120px] -z-10"></div>
+  <div class="absolute bottom-1/4 left-1/4 w-96 h-96 rounded-full bg-accent-500/10 blur-[120px] -z-10"></div>
+
+  <div class="w-full max-w-md">
+    
+    <!-- App Brand -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center gap-2 mb-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-500 to-accent-400 flex items-center justify-center font-bold text-white shadow-xl shadow-primary-500/20 text-lg">
+          C
+        </div>
+        <span class="text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-primary-300 bg-clip-text text-transparent">Civitas</span>
+      </div>
+      <p class="text-slate-400 text-sm">A plataforma completa para gestão de ONGs e institutos sociais</p>
+    </div>
+
+    <!-- Card Wrapper -->
+    <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl shadow-2xl p-8">
+      
+      <h2 class="text-xl font-bold text-slate-100 mb-2 text-center">Crie sua conta pessoal</h2>
+      <p class="text-slate-400 text-xs text-center mb-6">Primeiro passo: crie sua credencial de acesso de administrador</p>
+
+      <!-- Error Alert -->
+      <div *ngIf="errorMessage()" class="mb-5 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-200 text-sm flex items-start gap-2.5">
+        <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span>{{ errorMessage() }}</span>
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-5">
+        
+        <!-- Name Input -->
+        <div>
+          <label for="fullName" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Nome Completo</label>
+          <div class="relative">
+            <input 
+              id="fullName"
+              type="text"
+              formControlName="fullName"
+              placeholder="Seu nome"
+              [ngClass]="{'border-red-500/50 focus:border-red-500': registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid, 'border-slate-800 focus:border-primary-500': !(registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid)}"
+              class="w-full bg-slate-950/80 text-slate-200 px-4 py-3 rounded-xl border text-sm outline-none transition-all duration-200 placeholder-slate-600 focus:ring-2 focus:ring-primary-500/10"
+            />
+          </div>
+          <!-- Validation errors -->
+          <div *ngIf="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid" class="text-red-400 text-xs mt-1.5 px-1">
+            <span *ngIf="registerForm.get('fullName')?.errors?.['required']">O nome completo é obrigatório.</span>
+            <span *ngIf="registerForm.get('fullName')?.errors?.['minlength']">O nome deve ter no mínimo 3 caracteres.</span>
+          </div>
+        </div>
+
+        <!-- Email Input -->
+        <div>
+          <label for="email" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">E-mail Corporativo</label>
+          <div class="relative">
+            <input 
+              id="email"
+              type="email"
+              formControlName="email"
+              placeholder="seu.nome@instituto.org"
+              [ngClass]="{'border-red-500/50 focus:border-red-500': registerForm.get('email')?.touched && registerForm.get('email')?.invalid, 'border-slate-800 focus:border-primary-500': !(registerForm.get('email')?.touched && registerForm.get('email')?.invalid)}"
+              class="w-full bg-slate-950/80 text-slate-200 px-4 py-3 rounded-xl border text-sm outline-none transition-all duration-200 placeholder-slate-600 focus:ring-2 focus:ring-primary-500/10"
+            />
+          </div>
+          <!-- Validation errors -->
+          <div *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid" class="text-red-400 text-xs mt-1.5 px-1">
+            <span *ngIf="registerForm.get('email')?.errors?.['required']">O e-mail é obrigatório.</span>
+            <span *ngIf="registerForm.get('email')?.errors?.['email']">Por favor, insira um e-mail válido.</span>
+          </div>
+        </div>
+
+        <!-- Password Input -->
+        <div>
+          <label for="password" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Senha</label>
+          <div class="relative">
+            <input 
+              id="password"
+              type="password"
+              formControlName="password"
+              placeholder="Mínimo 6 caracteres"
+              [ngClass]="{'border-red-500/50 focus:border-red-500': registerForm.get('password')?.touched && registerForm.get('password')?.invalid, 'border-slate-800 focus:border-primary-500': !(registerForm.get('password')?.touched && registerForm.get('password')?.invalid)}"
+              class="w-full bg-slate-950/80 text-slate-200 px-4 py-3 rounded-xl border text-sm outline-none transition-all duration-200 placeholder-slate-600 focus:ring-2 focus:ring-primary-500/10"
+            />
+          </div>
+          <!-- Validation errors -->
+          <div *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" class="text-red-400 text-xs mt-1.5 px-1">
+            <span *ngIf="registerForm.get('password')?.errors?.['required']">A senha é obrigatória.</span>
+            <span *ngIf="registerForm.get('password')?.errors?.['minlength']">A senha deve ter no mínimo 6 caracteres.</span>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          [disabled]="isLoading()"
+          class="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-primary-600/15 disabled:shadow-none hover:shadow-primary-600/20 active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2 text-sm mt-3"
+        >
+          <!-- Loading Spinner -->
+          <svg *ngIf="isLoading()" class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>{{ isLoading() ? 'Criando Conta...' : 'Prosseguir' }}</span>
+        </button>
+
+      </form>
+
+      <!-- Onboarding Link -->
+      <div class="mt-6 text-center border-t border-slate-800/80 pt-6">
+        <p class="text-sm text-slate-400">
+          Já possui uma conta? 
+          <a routerLink="/login" class="text-accent-400 hover:text-accent-300 font-semibold transition-colors">Fazer login</a>
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+</div>
