@@ -62,6 +62,26 @@ begin
 end;
 $$ language plpgsql;
 
+-- Helper function to register a tenant and link current user in a single secure Transaction
+create or replace function public.create_new_tenant(tenant_name text, tenant_slug text)
+returns public.tenants security definer as $$
+declare
+  new_tenant public.tenants;
+begin
+  -- 1. Insert tenant
+  insert into public.tenants (name, slug)
+  values (tenant_name, tenant_slug)
+  returning * into new_tenant;
+
+  -- 2. Update current user profile
+  update public.profiles
+  set tenant_id = new_tenant.id, role = 'admin'
+  where id = auth.uid();
+
+  return new_tenant;
+end;
+$$ language plpgsql;
+
 -- 5. Tenants Policies
 create policy "Users can view their own tenant"
     on public.tenants for select

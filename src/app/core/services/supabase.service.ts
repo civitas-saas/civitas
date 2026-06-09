@@ -137,26 +137,24 @@ export class SupabaseService {
       .replace(/\s+/g, '-') // Replace spaces with -
       .replace(/-+/g, '-'); // Remove duplicate -
 
-    // 1. Create Tenant
-    const { data: tenant, error: tenantError } = await this.supabase
-      .from('tenants')
-      .insert([{ name: orgName, slug }])
-      .select()
-      .single();
+    // Call Supabase RPC to create tenant and associate profile in a single Transaction
+    const { data: tenant, error } = await this.supabase.rpc('create_new_tenant', {
+      tenant_name: orgName,
+      tenant_slug: slug
+    });
 
-    if (tenantError) throw tenantError;
+    if (error) throw error;
 
-    // 2. Associate Profile with Tenant as Admin
+    // Fetch the updated profile to sync local state
     const { data: profile, error: profileError } = await this.supabase
       .from('profiles')
-      .update({ tenant_id: tenant.id, role: 'admin' })
+      .select('*')
       .eq('id', userProfileId)
-      .select()
       .single();
 
     if (profileError) throw profileError;
 
-    // Refresh state
+    // Refresh state signals
     this.currentProfile.set(profile);
     this.currentTenant.set(tenant);
 
