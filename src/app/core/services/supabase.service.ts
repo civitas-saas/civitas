@@ -149,12 +149,28 @@ export class SupabaseService {
   }
 
   async signOut() {
-    const { error } = await this.supabase.auth.signOut();
-    if (error) throw error;
-    this.currentUser.set(null);
-    this.currentProfile.set(null);
-    this.currentMember.set(null);
-    this.currentOrganization.set(null);
+    try {
+      await this.supabase.auth.signOut();
+    } catch (e) {
+      console.error('Erro ao chamar signOut no Supabase:', e);
+    } finally {
+      this.currentUser.set(null);
+      this.currentProfile.set(null);
+      this.currentMember.set(null);
+      this.currentOrganization.set(null);
+
+      // Force-clear local storage keys associated with Supabase to logout locally
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => window.localStorage.removeItem(key));
+      }
+    }
   }
 
   // --- Multi-Tenant Actions ---
