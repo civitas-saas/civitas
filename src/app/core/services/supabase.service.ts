@@ -27,8 +27,13 @@ export class SupabaseService {
     // Listen to auth changes
     this.supabase.auth.onAuthStateChange(async (event, session) => {
       this.isLoading.set(true);
-      await this.handleAuthStateChange(session);
-      this.isLoading.set(false);
+      try {
+        await this.handleAuthStateChange(session);
+      } catch (e) {
+        console.error('Erro na mudança de estado de autenticação:', e);
+      } finally {
+        this.isLoading.set(false);
+      }
     });
 
     // Initial check
@@ -36,9 +41,14 @@ export class SupabaseService {
   }
 
   private async checkSession() {
-    const { data: { session } } = await this.supabase.auth.getSession();
-    await this.handleAuthStateChange(session);
-    this.isLoading.set(false);
+    try {
+      const { data: { session } } = await this.supabase.auth.getSession();
+      await this.handleAuthStateChange(session);
+    } catch (e) {
+      console.error('Erro ao verificar sessão inicial:', e);
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   private async handleAuthStateChange(session: Session | null) {

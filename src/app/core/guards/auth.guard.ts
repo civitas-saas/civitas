@@ -5,8 +5,14 @@ import { SupabaseService } from '../services/supabase.service';
 const waitLoading = async (supabaseService: SupabaseService) => {
   if (supabaseService.isLoading()) {
     await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+        resolve();
+      }, 3000);
+
       const interval = setInterval(() => {
         if (!supabaseService.isLoading()) {
+          clearTimeout(timeout);
           clearInterval(interval);
           resolve();
         }
