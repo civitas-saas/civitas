@@ -49,7 +49,7 @@ export class MainLayoutComponent {
     { label: 'Projetos', route: '/projetos', icon: 'projetos' },
     { label: 'Fornecedores', route: '/fornecedores', icon: 'fornecedores' },
     { label: 'Evidências', route: '/evidencias', icon: 'evidencias' },
-    { label: 'Prestação de Contas', route: '/prestacao-contas', icon: 'prestacao' },
+    { label: 'Gestão Financeira', route: '/financeiro', icon: 'prestacao' },
     { label: 'Portal de Transparência', route: '/transparencia', icon: 'transparencia' }
   ];
 

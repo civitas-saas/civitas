@@ -16,6 +16,19 @@ export interface ChecklistItem {
   concluida: boolean;
 }
 
+export interface WorkPlanItem {
+  id: string;
+  etapa: string;
+  atividade: string;
+  responsavel: string;
+  dataPrevista: string;
+  dataRealizada?: string;
+  orcamentoPrevisto: number;
+  orcamentoExecutado: number;
+  status: 'Pendente' | 'Em Andamento' | 'Concluído' | 'Atrasado';
+  evidenciasObrigatorias: string[];
+}
+
 export interface Projeto {
   id: string;
   nome: string;
@@ -33,6 +46,7 @@ export interface Projeto {
   status: 'Planejamento' | 'Em Execução' | 'Prestação de Contas' | 'Concluído' | 'Cancelado';
   timeline: TimelineStep[];
   checklist: ChecklistItem[];
+  planoTrabalho: WorkPlanItem[];
 }
 
 @Component({
@@ -41,7 +55,7 @@ export interface Projeto {
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './projetos.component.html',
   styleUrl: './projetos.component.css'
-})
+} )
 export class ProjetosComponent {
   // Navigation views
   public currentView: 'list' | 'create' | 'edit' | 'detail' = 'list';
@@ -51,7 +65,17 @@ export class ProjetosComponent {
   public searchQuery: string = '';
   public filterStatus: string = 'all';
 
-  // Forms Management
+  // Detail view active tab and sub-views
+  public activeDetailTab: 'panel' | 'workplan' | 'cronograma' = 'workplan';
+  public activeWorkPlanView: 'table' | 'kanban' | 'timeline' = 'table';
+
+  // Work Plan Form control
+  public showWorkPlanForm: boolean = false;
+  public editingWorkPlanItem: WorkPlanItem | null = null;
+  public workPlanForm: Partial<WorkPlanItem> = {};
+  public tempEvidenceInput: string = '';
+
+  // Forms Management for basic project
   public projectForm: Partial<Projeto> = {};
   public tempChecklistItemDesc: string = '';
   public tempTimelineTitle: string = '';
@@ -59,6 +83,13 @@ export class ProjetosComponent {
 
   // Options
   public statusOptions = ['Planejamento', 'Em Execução', 'Prestação de Contas', 'Concluído', 'Cancelado'];
+  public commonEtapas = [
+    'Etapa 1: Infraestrutura e Preparação',
+    'Etapa 2: Divulgação e Seleção',
+    'Etapa 3: Execução Pedagógica / Atividades',
+    'Etapa 4: Encerramento e Relatórios'
+  ];
+  public workPlanStatusOptions = ['Pendente', 'Em Andamento', 'Concluído', 'Atrasado'];
 
   // Mock initial data
   public projetos: Projeto[] = [
@@ -91,6 +122,80 @@ export class ProjetosComponent {
         { id: 'c-4', descricao: 'Aula inaugural com mentores do mercado', concluida: true },
         { id: 'c-5', descricao: 'Entrega dos certificados parciais do Módulo I', concluida: false },
         { id: 'c-6', descricao: 'Pesquisa final de satisfação e empregabilidade', concluida: false }
+      ],
+      planoTrabalho: [
+        {
+          id: 'wp-1-1',
+          etapa: 'Etapa 1: Infraestrutura e Preparação',
+          atividade: 'Readequação física do laboratório e instalação elétrica',
+          responsavel: 'Carlos Mendonça',
+          dataPrevista: '2026-03-10',
+          dataRealizada: '2026-03-08',
+          orcamentoPrevisto: 12000,
+          orcamentoExecutado: 11500,
+          status: 'Concluído',
+          evidenciasObrigatorias: ['Contrato de Locação', 'Fotos do Laboratório']
+        },
+        {
+          id: 'wp-1-2',
+          etapa: 'Etapa 1: Infraestrutura e Preparação',
+          atividade: 'Compra e configuração dos 15 computadores e rede wi-fi',
+          responsavel: 'Mariana Silva',
+          dataPrevista: '2026-03-20',
+          dataRealizada: '2026-03-22',
+          orcamentoPrevisto: 45000,
+          orcamentoExecutado: 48000,
+          status: 'Concluído',
+          evidenciasObrigatorias: ['Nota Fiscal Eletrônica', 'Relatório de Ativos']
+        },
+        {
+          id: 'wp-1-3',
+          etapa: 'Etapa 2: Divulgação e Seleção',
+          atividade: 'Processo seletivo e matrículas de jovens da comunidade',
+          responsavel: 'Ana Paula Dias',
+          dataPrevista: '2026-04-05',
+          dataRealizada: '2026-04-04',
+          orcamentoPrevisto: 3000,
+          orcamentoExecutado: 2800,
+          status: 'Concluído',
+          evidenciasObrigatorias: ['Fichas de Inscrição', 'Edital de Seleção']
+        },
+        {
+          id: 'wp-1-4',
+          etapa: 'Etapa 3: Execução Pedagógica / Atividades',
+          atividade: 'Aulas diárias do Módulo I (Lógica e Web Básica)',
+          responsavel: 'Thiago Martins',
+          dataPrevista: '2026-06-30',
+          dataRealizada: '',
+          orcamentoPrevisto: 25000,
+          orcamentoExecutado: 12000,
+          status: 'Em Andamento',
+          evidenciasObrigatorias: ['Diários de Classe', 'Frequência dos Alunos']
+        },
+        {
+          id: 'wp-1-5',
+          etapa: 'Etapa 3: Execução Pedagógica / Atividades',
+          atividade: 'Realização de Hackathon e desenvolvimento de projetos práticos',
+          responsavel: 'Thiago Martins',
+          dataPrevista: '2026-08-20',
+          dataRealizada: '',
+          orcamentoPrevisto: 8000,
+          orcamentoExecutado: 0,
+          status: 'Pendente',
+          evidenciasObrigatorias: ['Fotos do Evento', 'Repositórios do Github']
+        },
+        {
+          id: 'wp-1-6',
+          etapa: 'Etapa 4: Encerramento e Relatórios',
+          atividade: 'Visita técnica de mentoria no ecossistema de inovação',
+          responsavel: 'Ana Paula Dias',
+          dataPrevista: '2026-05-15',
+          dataRealizada: '',
+          orcamentoPrevisto: 6000,
+          orcamentoExecutado: 0,
+          status: 'Atrasado',
+          evidenciasObrigatorias: ['Lista de Presença Assinada', 'Relatório Técnico']
+        }
       ]
     },
     {
@@ -100,7 +205,7 @@ export class ProjetosComponent {
       organizacao: 'ONG Civitas Brasil',
       editalVinculado: 'Termo de Cooperação Municipal 08/2025',
       patrocinadorVinculado: 'Prefeitura de São Paulo',
-      objetivo: 'Alfabetizar 80 adultos não alfabetizados da região periférica para permitir inserção no mercado e autonomia básica.',
+      objetivo: 'Alfabetizar 80 adults não alfabetizados da região periférica para permitir inserção no mercado e autonomia básica.',
       publicoAlvo: 'Adultos e idosos acima de 35 anos que não concluíram o ensino primário.',
       valorAprovado: 90000,
       valorCaptado: 90000,
@@ -117,6 +222,44 @@ export class ProjetosComponent {
         { id: 'c-7', descricao: 'Mapeamento de alunos nas residências', concluida: true },
         { id: 'c-8', descricao: 'Compra de material escolar básico', concluida: true },
         { id: 'c-9', descricao: 'Homologação do relatório financeiro final', concluida: false }
+      ],
+      planoTrabalho: [
+        {
+          id: 'wp-2-1',
+          etapa: 'Etapa 1: Infraestrutura e Preparação',
+          atividade: 'Elaboração das apostilas de andragogia e material de apoio',
+          responsavel: 'Clara Rodrigues',
+          dataPrevista: '2025-06-10',
+          dataRealizada: '2025-06-08',
+          orcamentoPrevisto: 4000,
+          orcamentoExecutado: 4000,
+          status: 'Concluído',
+          evidenciasObrigatorias: ['Apostila Homologada', 'Projeto Pedagógico']
+        },
+        {
+          id: 'wp-2-2',
+          etapa: 'Etapa 3: Execução Pedagógica / Atividades',
+          atividade: 'Desenvolvimento das aulas noturnas de letramento',
+          responsavel: 'Lucas Fonseca',
+          dataPrevista: '2025-11-30',
+          dataRealizada: '2025-11-28',
+          orcamentoPrevisto: 46000,
+          orcamentoExecutado: 46000,
+          status: 'Concluído',
+          evidenciasObrigatorias: ['Lista de Presença', 'Fotos das Oficinas']
+        },
+        {
+          id: 'wp-2-3',
+          etapa: 'Etapa 4: Encerramento e Relatórios',
+          atividade: 'Consolidação das notas fiscais e envio ao setor municipal',
+          responsavel: 'Clara Rodrigues',
+          dataPrevista: '2026-02-10',
+          dataRealizada: '2026-02-12',
+          orcamentoPrevisto: 2000,
+          orcamentoExecutado: 2000,
+          status: 'Concluído',
+          evidenciasObrigatorias: ['Parecer de Auditoria', 'Comprovantes de Custos']
+        }
       ]
     },
     {
@@ -142,6 +285,44 @@ export class ProjetosComponent {
       checklist: [
         { id: 'c-10', descricao: 'Vistoria técnica de segurança do espaço', concluida: false },
         { id: 'c-11', descricao: 'Abertura das inscrições nas escolas parceiras', concluida: false }
+      ],
+      planoTrabalho: [
+        {
+          id: 'wp-3-1',
+          etapa: 'Etapa 1: Infraestrutura e Preparação',
+          atividade: 'Vistoria técnica e locação do ginásio municipal',
+          responsavel: 'Roberto Souza',
+          dataPrevista: '2026-06-15',
+          dataRealizada: '',
+          orcamentoPrevisto: 10000,
+          orcamentoExecutado: 0,
+          status: 'Pendente',
+          evidenciasObrigatorias: ['Laudo de Vistoria', 'Termo de Permissão']
+        },
+        {
+          id: 'wp-3-2',
+          etapa: 'Etapa 1: Infraestrutura e Preparação',
+          atividade: 'Contratação e capacitação de educadores físicos',
+          responsavel: 'Patrícia Neves',
+          dataPrevista: '2026-06-25',
+          dataRealizada: '',
+          orcamentoPrevisto: 15000,
+          orcamentoExecutado: 0,
+          status: 'Pendente',
+          evidenciasObrigatorias: ['Contrato de Trabalho', 'Certificados de Ed. Física']
+        },
+        {
+          id: 'wp-3-3',
+          etapa: 'Etapa 2: Divulgação e Seleção',
+          atividade: 'Inscrições abertas e distribuição dos kits esportivos',
+          responsavel: 'Roberto Souza',
+          dataPrevista: '2026-07-05',
+          dataRealizada: '',
+          orcamentoPrevisto: 12000,
+          orcamentoExecutado: 0,
+          status: 'Pendente',
+          evidenciasObrigatorias: ['Lista de Entrega de Kits', 'Fichas de Autorização']
+        }
       ]
     },
     {
@@ -167,6 +348,44 @@ export class ProjetosComponent {
       checklist: [
         { id: 'c-12', descricao: 'Entrega de botas e luvas de proteção térmica', concluida: true },
         { id: 'c-13', descricao: 'Venda do primeiro lote prensado para a indústria', concluida: true }
+      ],
+      planoTrabalho: [
+        {
+          id: 'wp-4-1',
+          etapa: 'Etapa 1: Infraestrutura e Preparação',
+          atividade: 'Compra e entrega de EPIs para os 40 cooperados',
+          responsavel: 'Gilberto Ramos',
+          dataPrevista: '2025-08-15',
+          dataRealizada: '2025-08-14',
+          orcamentoPrevisto: 15000,
+          orcamentoExecutado: 14500,
+          status: 'Concluído',
+          evidenciasObrigatorias: ['Recibos de Entrega de EPI', 'Fotos dos Cooperados']
+        },
+        {
+          id: 'wp-4-2',
+          etapa: 'Etapa 1: Infraestrutura e Preparação',
+          atividade: 'Instalação de prensa hidráulica industrial',
+          responsavel: 'Gilberto Ramos',
+          dataPrevista: '2025-10-01',
+          dataRealizada: '2025-10-05',
+          orcamentoPrevisto: 80000,
+          orcamentoExecutado: 82000,
+          status: 'Concluído',
+          evidenciasObrigatorias: ['Nota Fiscal da Prensa', 'Fotos da Instalação']
+        },
+        {
+          id: 'wp-4-3',
+          etapa: 'Etapa 3: Execução Pedagógica / Atividades',
+          atividade: 'Oficinas de triagem avançada de polímeros e metais',
+          responsavel: 'Fernanda Lins',
+          dataPrevista: '2025-11-20',
+          dataRealizada: '2025-11-22',
+          orcamentoPrevisto: 18000,
+          orcamentoExecutado: 18000,
+          status: 'Concluído',
+          evidenciasObrigatorias: ['Lista de Presença', 'Certificados de Conclusão']
+        }
       ]
     }
   ];
@@ -195,6 +414,10 @@ export class ProjetosComponent {
   public viewDetail(proj: Projeto): void {
     this.selectedProject = proj;
     this.currentView = 'detail';
+    this.activeDetailTab = 'workplan'; // Default to work plan tab
+    this.activeWorkPlanView = 'table';
+    this.showWorkPlanForm = false;
+    this.editingWorkPlanItem = null;
   }
 
   public viewCreate(): void {
@@ -213,7 +436,8 @@ export class ProjetosComponent {
       dataFim: '',
       status: 'Planejamento',
       timeline: [],
-      checklist: []
+      checklist: [],
+      planoTrabalho: []
     };
     this.tempChecklistItemDesc = '';
     this.tempTimelineTitle = '';
@@ -253,7 +477,8 @@ export class ProjetosComponent {
       dataFim: this.projectForm.dataFim || '',
       status: this.projectForm.status || 'Planejamento',
       timeline: this.projectForm.timeline || [],
-      checklist: this.projectForm.checklist || []
+      checklist: this.projectForm.checklist || [],
+      planoTrabalho: this.projectForm.planoTrabalho || []
     };
 
     this.projetos.unshift(newProj);
@@ -366,6 +591,133 @@ export class ProjetosComponent {
 
   public removeTimelineStepForm(index: number): void {
     this.projectForm.timeline?.splice(index, 1);
+  }
+
+  // WORK PLAN ACTIONS
+  public openAddWorkPlanItem(): void {
+    this.editingWorkPlanItem = null;
+    this.workPlanForm = {
+      etapa: this.commonEtapas[0],
+      atividade: '',
+      responsavel: '',
+      dataPrevista: new Date().toISOString().split('T')[0],
+      dataRealizada: '',
+      orcamentoPrevisto: 0,
+      orcamentoExecutado: 0,
+      status: 'Pendente',
+      evidenciasObrigatorias: []
+    };
+    this.tempEvidenceInput = '';
+    this.showWorkPlanForm = true;
+  }
+
+  public openEditWorkPlanItem(item: WorkPlanItem): void {
+    this.editingWorkPlanItem = item;
+    this.workPlanForm = JSON.parse(JSON.stringify(item));
+    this.tempEvidenceInput = '';
+    this.showWorkPlanForm = true;
+  }
+
+  public addEvidenceTag(): void {
+    if (this.tempEvidenceInput.trim()) {
+      if (!this.workPlanForm.evidenciasObrigatorias) {
+        this.workPlanForm.evidenciasObrigatorias = [];
+      }
+      this.workPlanForm.evidenciasObrigatorias.push(this.tempEvidenceInput.trim());
+      this.tempEvidenceInput = '';
+    }
+  }
+
+  public removeEvidenceTag(idx: number): void {
+    this.workPlanForm.evidenciasObrigatorias?.splice(idx, 1);
+  }
+
+  public saveWorkPlanItem(proj: Projeto): void {
+    if (!this.workPlanForm.atividade || !this.workPlanForm.responsavel || !this.workPlanForm.dataPrevista) {
+      alert('Por favor, preencha a Atividade, Responsável e a Data Prevista.');
+      return;
+    }
+
+    if (!proj.planoTrabalho) {
+      proj.planoTrabalho = [];
+    }
+
+    if (this.workPlanForm.status === 'Concluído' && !this.workPlanForm.dataRealizada) {
+      this.workPlanForm.dataRealizada = new Date().toISOString().split('T')[0];
+    }
+
+    if (this.editingWorkPlanItem) {
+      // Edit mode
+      const idx = proj.planoTrabalho.findIndex(item => item.id === this.editingWorkPlanItem!.id);
+      if (idx !== -1) {
+        proj.planoTrabalho[idx] = {
+          ...this.workPlanForm,
+          id: this.editingWorkPlanItem.id
+        } as WorkPlanItem;
+      }
+    } else {
+      // Add mode
+      const newItem: WorkPlanItem = {
+        ...this.workPlanForm,
+        id: `wp-${Date.now()}`
+      } as WorkPlanItem;
+      proj.planoTrabalho.push(newItem);
+    }
+
+    // Sort work plan items by dataPrevista
+    proj.planoTrabalho.sort((a, b) => new Date(a.dataPrevista).getTime() - new Date(b.dataPrevista).getTime());
+
+    this.showWorkPlanForm = false;
+    this.editingWorkPlanItem = null;
+    this.workPlanForm = {};
+  }
+
+  public deleteWorkPlanItem(proj: Projeto, itemId: string): void {
+    if (confirm('Deseja excluir esta atividade do plano de trabalho?')) {
+      proj.planoTrabalho = proj.planoTrabalho.filter(item => item.id !== itemId);
+      // Update selected project reference to refresh UI
+      if (this.selectedProject && this.selectedProject.id === proj.id) {
+        this.selectedProject.planoTrabalho = proj.planoTrabalho;
+      }
+    }
+  }
+
+  public changeWorkPlanItemStatus(item: WorkPlanItem, newStatus: string): void {
+    if (newStatus === 'Pendente' || newStatus === 'Em Andamento' || newStatus === 'Concluído' || newStatus === 'Atrasado') {
+      item.status = newStatus;
+      if (newStatus === 'Concluído') {
+        if (!item.dataRealizada) {
+          item.dataRealizada = new Date().toISOString().split('T')[0];
+        }
+      } else {
+        item.dataRealizada = '';
+      }
+    }
+  }
+
+  public getWorkPlanItemsByStatus(proj: Projeto, status: string): WorkPlanItem[] {
+    if (!proj || !proj.planoTrabalho) return [];
+    return proj.planoTrabalho.filter(item => item.status === status);
+  }
+
+  public getWorkPlanBudgetTotals(proj: Projeto): { previsto: number, executado: number } {
+    if (!proj.planoTrabalho || proj.planoTrabalho.length === 0) {
+      return { previsto: 0, executado: 0 };
+    }
+    return proj.planoTrabalho.reduce((acc, curr) => {
+      acc.previsto += curr.orcamentoPrevisto || 0;
+      acc.executado += curr.orcamentoExecutado || 0;
+      return acc;
+    }, { previsto: 0, executado: 0 });
+  }
+
+  // Check if an item is visually delayed
+  public isItemDelayed(item: WorkPlanItem): boolean {
+    if (item.status === 'Concluído') return false;
+    if (item.status === 'Atrasado') return true;
+    
+    const todayStr = new Date().toISOString().split('T')[0];
+    return item.dataPrevista < todayStr;
   }
 
   // Visual/Formatting Helpers

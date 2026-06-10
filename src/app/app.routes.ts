@@ -56,6 +56,10 @@ export const routes: Routes = [
         loadComponent: () => import('./views/modules/prestacao-contas/prestacao-contas.component').then(m => m.PrestacaoContasComponent)
       },
       {
+        path: 'financeiro',
+        loadComponent: () => import('./views/modules/financeiro/financeiro.component').then(m => m.FinanceiroComponent)
+      },
+      {
         path: 'transparencia',
         loadComponent: () => import('./views/modules/transparencia/transparencia.component').then(m => m.TransparenciaComponent)
       }

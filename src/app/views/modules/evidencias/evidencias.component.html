@@ -1,0 +1,542 @@
+<div class="space-y-6 max-w-7xl mx-auto py-6 animate-fade-in font-sans">
+  
+  <!-- Header Section -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-800/80 pb-6 select-none">
+    <div>
+      <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1.5">
+        <a routerLink="/dashboard" class="hover:text-primary-400">Dashboard</a>
+        <span>/</span>
+        <span class="text-slate-300">Evidências</span>
+      </div>
+      <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+        <svg class="w-7 h-7 text-accent-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+        Evidências e Comprovação
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">Envie e audite as comprovações físicas de execução das etapas do plano de trabalho.</p>
+    </div>
+
+    <button 
+      type="button"
+      (click)="openAddForm()" 
+      class="bg-accent-600 hover:bg-accent-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 self-start md:self-auto cursor-pointer shadow-lg shadow-accent-600/10">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+      </svg>
+      Nova Evidência
+    </button>
+  </div>
+
+  <!-- Metric Overview Cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 select-none">
+    <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-5 relative overflow-hidden">
+      <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Total de Evidências</span>
+      <h2 class="text-2xl font-black text-white tracking-tight font-mono">{{ countTotal }}</h2>
+      <span class="text-[9px] font-semibold text-slate-450 block mt-1">Registradas em todos os projetos</span>
+    </div>
+
+    <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-5 relative overflow-hidden">
+      <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Validadas (Aprovadas)</span>
+      <h2 class="text-2xl font-black text-emerald-450 tracking-tight font-mono">{{ countAprovadas }}</h2>
+      <span class="text-[9px] font-semibold text-slate-450 block mt-1">Prontas para prestação de contas</span>
+    </div>
+
+    <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-5 relative overflow-hidden">
+      <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Aguardando Auditoria</span>
+      <h2 class="text-2xl font-black text-amber-450 tracking-tight font-mono">{{ countPendentes }}</h2>
+      <span class="text-[9px] font-semibold text-slate-450 block mt-1">Aguardando revisão interna</span>
+    </div>
+
+    <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-5 relative overflow-hidden">
+      <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">Recusadas / Pendentes</span>
+      <h2 class="text-2xl font-black text-rose-450 tracking-tight font-mono">{{ countRejeitadas }}</h2>
+      <span class="text-[9px] font-semibold text-slate-450 block mt-1">Ações requeridas de reenvio</span>
+    </div>
+  </div>
+
+  <!-- Search & Filters -->
+  <div class="bg-slate-900/20 border border-slate-850 p-4 rounded-2xl flex flex-col lg:flex-row gap-4 select-none">
+    
+    <!-- Text Search -->
+    <div class="flex-1 relative">
+      <input 
+        type="text" 
+        [(ngModel)]="buscaTextual" 
+        placeholder="Buscar por arquivo, responsável, etapa..." 
+        class="w-full bg-slate-950 border border-slate-800 focus:border-accent-500 text-slate-200 text-xs py-2.5 pl-9 pr-3 rounded-xl outline-none transition-colors">
+      <svg class="absolute left-3.5 top-3 w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+    </div>
+
+    <!-- Filter selectors -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <!-- Project -->
+      <select 
+        [(ngModel)]="filtroProjeto" 
+        class="bg-slate-950 border border-slate-800 focus:border-accent-500 rounded-xl py-2 px-3 text-xs font-semibold text-slate-300 outline-none cursor-pointer">
+        <option value="">Todos os Projetos</option>
+        <option *ngFor="let p of projetos" [value]="p.id">{{ p.nome }}</option>
+      </select>
+
+      <!-- Type -->
+      <select 
+        [(ngModel)]="filtroTipo" 
+        class="bg-slate-950 border border-slate-800 focus:border-accent-500 rounded-xl py-2 px-3 text-xs font-semibold text-slate-300 outline-none cursor-pointer">
+        <option value="">Todos os Tipos</option>
+        <option *ngFor="let t of tiposEvidencia" [value]="t">{{ t }}</option>
+      </select>
+
+      <!-- Status -->
+      <select 
+        [(ngModel)]="filtroStatus" 
+        class="bg-slate-950 border border-slate-800 focus:border-accent-500 rounded-xl py-2 px-3 text-xs font-semibold text-slate-300 outline-none cursor-pointer">
+        <option value="">Todos os Status</option>
+        <option value="Pendente">Aguardando Auditoria</option>
+        <option value="Aprovado">Validado</option>
+        <option value="Rejeitado">Rejeitado</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Evidence Grid -->
+  <div *ngIf="filteredEvidencias.length === 0" class="text-center py-20 bg-slate-900/10 border border-slate-850 rounded-3xl select-none">
+    <svg class="w-12 h-12 text-slate-700 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+    </svg>
+    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wide">Nenhuma evidência encontrada</h3>
+    <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Tente refinar seus termos de pesquisa ou limpar os filtros selecionados.</p>
+  </div>
+
+  <div *ngIf="filteredEvidencias.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div *ngFor="let ev of filteredEvidencias" class="bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden flex flex-col justify-between hover:shadow-xl transition-all duration-300 relative group">
+      
+      <!-- Top header layout -->
+      <div class="p-5 pb-3">
+        <div class="flex items-start justify-between gap-3 mb-2">
+          <span class="text-[9px] font-black text-slate-500 uppercase tracking-wider block truncate max-w-[170px]" [title]="ev.projetoNome">
+            {{ ev.projetoNome }}
+          </span>
+          <span [ngClass]="{
+            'text-cyan-400 bg-cyan-500/5 border-cyan-500/20': ev.tipo === 'Foto' || ev.tipo === 'Vídeo',
+            'text-indigo-400 bg-indigo-500/5 border-indigo-500/20': ev.tipo === 'PDF' || ev.tipo === 'Lista de Presença',
+            'text-emerald-400 bg-emerald-500/5 border-emerald-500/20': ev.tipo === 'Nota Fiscal' || ev.tipo === 'Recibo' || ev.tipo === 'Contrato',
+            'text-slate-400 bg-slate-800/40 border-slate-850': ev.tipo === 'Documento Digitalizado' || ev.tipo === 'Link Externo'
+          }" class="text-[8px] font-black px-2 py-0.5 border rounded uppercase select-none tracking-wide shrink-0">
+            {{ ev.tipo }}
+          </span>
+        </div>
+        <h3 class="text-xs font-bold text-white truncate" [title]="ev.arquivoNome">{{ ev.arquivoNome }}</h3>
+        <p class="text-[10px] text-slate-400 mt-1 truncate">Etapa: {{ ev.etapa }}</p>
+      </div>
+
+      <!-- Preview container -->
+      <div class="relative h-44 bg-slate-950 border-y border-slate-900 overflow-hidden flex items-center justify-center select-none group-hover:bg-slate-950/80 transition-colors">
+        
+        <!-- Image display -->
+        <img *ngIf="isImage(ev)" [src]="ev.arquivoUrl" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Evidência Visual">
+        
+        <!-- Video placeholder -->
+        <div *ngIf="isVideo(ev)" class="text-center space-y-2">
+          <div class="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto shadow-md">
+            <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+          <span class="text-[9px] font-bold text-cyan-400 block uppercase tracking-wider">Visualizar Vídeo</span>
+        </div>
+
+        <!-- Documents (PDF, NF, Recibo, Contrato, Lista) -->
+        <div *ngIf="!isImage(ev) && !isVideo(ev) && ev.tipo !== 'Link Externo'" class="text-center space-y-2">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <span class="text-[9px] font-bold text-indigo-400 block uppercase tracking-wider font-mono">Abrir Arquivo</span>
+        </div>
+
+        <!-- Link Externo -->
+        <div *ngIf="ev.tipo === 'Link Externo'" class="text-center space-y-2">
+          <div class="w-12 h-12 rounded-full bg-slate-800 border border-slate-750 text-slate-300 flex items-center justify-center mx-auto">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+            </svg>
+          </div>
+          <span class="text-[9px] font-bold text-slate-300 block uppercase tracking-wider">Acessar Link Externo</span>
+        </div>
+
+        <!-- In-image Hover overlay action -->
+        <div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
+          <button 
+            type="button"
+            (click)="openDetails(ev)" 
+            class="bg-white text-slate-950 font-bold px-4.5 py-2 rounded-xl text-xs flex items-center gap-1 cursor-pointer transform translate-y-2 group-hover:translate-y-0 transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            Auditar Evidência
+          </button>
+        </div>
+      </div>
+
+      <!-- Footer Info and Action row -->
+      <div class="p-5 flex items-center justify-between text-xs select-none">
+        
+        <!-- Status indicator -->
+        <span [ngClass]="{
+          'text-emerald-400 bg-emerald-500/10 border-emerald-500/20': ev.statusValidacao === 'Aprovado',
+          'text-amber-400 bg-amber-500/10 border-amber-500/20': ev.statusValidacao === 'Pendente',
+          'text-rose-400 bg-rose-500/10 border-rose-500/20': ev.statusValidacao === 'Rejeitado'
+        }" class="text-[8px] font-black px-2 py-0.5 border rounded uppercase tracking-wider font-sans shrink-0">
+          {{ ev.statusValidacao }}
+        </span>
+
+        <!-- Meta count & interaction -->
+        <div class="flex items-center gap-3.5 text-slate-500 text-[10px]">
+          <span class="flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            {{ ev.comentarios.length }}
+          </span>
+          <span class="font-mono">{{ ev.data | date:'dd/MM/yyyy':'UTC' }}</span>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- AUDIT / DETAIL MODAL -->
+  <div *ngIf="selectedEvidencia" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div (click)="closeDetails()" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+
+    <!-- Modal Box -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row relative z-10 animate-fade-in shadow-2xl">
+      
+      <!-- Left Media Column -->
+      <div class="w-full md:w-1/2 bg-slate-950 p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800 select-none">
+        
+        <div class="flex-1 flex items-center justify-center min-h-[200px] md:min-h-0">
+          
+          <!-- Image -->
+          <img *ngIf="isImage(selectedEvidencia)" [src]="selectedEvidencia.arquivoUrl" class="max-w-full max-h-[45vh] md:max-h-[60vh] object-contain rounded-xl shadow-lg" alt="Comprovante Ampliado">
+          
+          <!-- Video -->
+          <div *ngIf="isVideo(selectedEvidencia)" class="text-center space-y-4 py-8">
+            <div class="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto shadow-md">
+              <svg class="w-7 h-7 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <div>
+              <span class="text-xs font-bold text-white block uppercase tracking-wider">{{ selectedEvidencia.arquivoNome }}</span>
+              <span class="text-[9px] font-semibold text-slate-500 block mt-1">Execução gravada</span>
+            </div>
+          </div>
+
+          <!-- Document -->
+          <div *ngIf="!isImage(selectedEvidencia) && !isVideo(selectedEvidencia) && selectedEvidencia.tipo !== 'Link Externo'" class="text-center space-y-4 py-8">
+            <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+              <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </div>
+            <div>
+              <span class="text-xs font-bold text-white block uppercase tracking-wider truncate max-w-[280px]" [title]="selectedEvidencia.arquivoNome">
+                {{ selectedEvidencia.arquivoNome }}
+              </span>
+              <span class="text-[9px] font-semibold text-slate-500 block font-mono mt-1">Formato Documental</span>
+            </div>
+          </div>
+
+          <!-- Link Externo -->
+          <div *ngIf="selectedEvidencia.tipo === 'Link Externo'" class="text-center space-y-4 py-8">
+            <div class="w-16 h-16 rounded-full bg-slate-800 border border-slate-700 text-slate-350 flex items-center justify-center mx-auto">
+              <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+              </svg>
+            </div>
+            <div>
+              <span class="text-xs font-bold text-white block uppercase tracking-wider truncate max-w-[280px]" [title]="selectedEvidencia.arquivoUrl">
+                {{ selectedEvidencia.arquivoUrl }}
+              </span>
+              <span class="text-[9px] font-semibold text-slate-500 block mt-1">Navegação Externa</span>
+            </div>
+          </div>
+
+        </div>
+
+        <button 
+          type="button"
+          (click)="openLink(selectedEvidencia.arquivoUrl)" 
+          class="w-full bg-slate-900 border border-slate-800 hover:bg-slate-800/80 text-slate-300 font-bold py-2.5 rounded-xl text-xs mt-4 flex items-center justify-center gap-1.5 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          {{ selectedEvidencia.tipo === 'Link Externo' ? 'Acessar Link Externo' : 'Visualizar / Baixar Arquivo' }}
+        </button>
+
+      </div>
+
+      <!-- Right Audit Column -->
+      <div class="w-full md:w-1/2 p-6 flex flex-col justify-between max-h-[50vh] md:max-h-none overflow-y-auto">
+        <div class="space-y-4">
+          
+          <!-- Close button -->
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 select-none">
+            <div>
+              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Auditoria de Prestação</span>
+              <span [ngClass]="{
+                'text-emerald-400 bg-emerald-500/10 border-emerald-500/20': selectedEvidencia.statusValidacao === 'Aprovado',
+                'text-amber-400 bg-amber-500/10 border-amber-500/20': selectedEvidencia.statusValidacao === 'Pendente',
+                'text-rose-400 bg-rose-500/10 border-rose-500/20': selectedEvidencia.statusValidacao === 'Rejeitado'
+              }" class="text-[8px] font-black px-2 py-0.5 border rounded uppercase tracking-wider font-sans">
+                {{ selectedEvidencia.statusValidacao }}
+              </span>
+            </div>
+            <button type="button" (click)="closeDetails()" class="text-slate-500 hover:text-white font-bold text-lg cursor-pointer">&times;</button>
+          </div>
+
+          <!-- Metadata Context -->
+          <div class="grid grid-cols-2 gap-3.5 text-[11px] bg-slate-950/40 p-3 rounded-2xl border border-slate-850 select-none">
+            <div>
+              <span class="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">Projeto</span>
+              <span class="text-slate-200 font-semibold truncate block" [title]="selectedEvidencia.projetoNome">{{ selectedEvidencia.projetoNome }}</span>
+            </div>
+            <div>
+              <span class="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">Etapa</span>
+              <span class="text-slate-200 font-semibold block truncate" [title]="selectedEvidencia.etapa">{{ selectedEvidencia.etapa }}</span>
+            </div>
+            <div>
+              <span class="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">Responsável</span>
+              <span class="text-slate-350 block truncate">{{ selectedEvidencia.responsavel }}</span>
+            </div>
+            <div>
+              <span class="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">Data do Envio</span>
+              <span class="text-slate-350 block font-mono">{{ selectedEvidencia.data | date:'dd/MM/yyyy':'UTC' }}</span>
+            </div>
+            <div *ngIf="selectedEvidencia.localizacao" class="col-span-2">
+              <span class="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">Geolocalização / Local</span>
+              <span class="text-slate-350 block truncate">{{ selectedEvidencia.localizacao }}</span>
+            </div>
+          </div>
+
+          <!-- Auditor decision controls -->
+          <div class="border-t border-slate-800 pt-3 select-none">
+            <h4 class="text-[9px] font-black uppercase text-slate-500 tracking-wider mb-2.5">Ações de Validação Administrativa</h4>
+            
+            <div *ngIf="!showRejectionInput" class="flex gap-2">
+              <button 
+                type="button"
+                [disabled]="selectedEvidencia.statusValidacao === 'Aprovado'"
+                (click)="approveEvidencia(selectedEvidencia)" 
+                class="flex-1 bg-emerald-600/10 hover:bg-emerald-600 border border-emerald-500/20 hover:border-emerald-500 text-emerald-400 hover:text-white font-bold py-2 rounded-xl text-xs transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+                Homologar / Aprovar
+              </button>
+              <button 
+                type="button"
+                [disabled]="selectedEvidencia.statusValidacao === 'Rejeitado'"
+                (click)="startRejection()" 
+                class="flex-1 bg-rose-600/10 hover:bg-rose-600 border border-rose-500/20 hover:border-rose-500 text-rose-400 hover:text-white font-bold py-2 rounded-xl text-xs transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+                Recusar Evidência
+              </button>
+            </div>
+
+            <!-- In-place rejection feedback -->
+            <div *ngIf="showRejectionInput" class="space-y-2.5 bg-rose-950/10 border border-rose-500/20 p-3.5 rounded-2xl animate-fade-in">
+              <label class="text-[9px] font-bold text-rose-400 uppercase tracking-wider block">Jusitificativa de Recusa / Correções *</label>
+              <textarea 
+                [(ngModel)]="motivoRejeicao" 
+                rows="2" 
+                placeholder="Ex: Nota fiscal ilegível ou sem assinatura do responsável..." 
+                class="w-full bg-slate-950 border border-slate-800 focus:border-rose-500 text-slate-300 text-xs p-2 rounded-lg outline-none font-sans"></textarea>
+              <div class="flex gap-2 justify-end">
+                <button type="button" (click)="cancelRejection()" class="text-slate-500 hover:text-slate-200 text-[10px] font-bold px-3 py-1 cursor-pointer">Cancelar</button>
+                <button type="button" (click)="rejectEvidencia(selectedEvidencia)" class="bg-rose-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer">Confirmar Rejeição</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comments feed -->
+          <div class="border-t border-slate-800 pt-3 flex flex-col">
+            <h4 class="text-[9px] font-black uppercase text-slate-500 tracking-wider mb-2.5 select-none">Feed de Auditoria & Notas</h4>
+            
+            <div *ngIf="selectedEvidencia.comentarios.length === 0" class="text-center py-6 text-slate-650 text-[11px] font-medium border border-dashed border-slate-850 rounded-2xl select-none">
+              Nenhuma nota ou comentário registrado.
+            </div>
+
+            <div *ngIf="selectedEvidencia.comentarios.length > 0" class="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin select-none">
+              <div *ngFor="let c of selectedEvidencia.comentarios" class="bg-slate-950/30 p-2.5 rounded-xl border border-slate-850">
+                <div class="flex items-center justify-between text-[9px] text-slate-500 font-semibold mb-1">
+                  <span>{{ c.autor }}</span>
+                  <span class="font-mono">{{ c.data | date:'dd/MM/yyyy':'UTC' }}</span>
+                </div>
+                <p class="text-slate-300 text-xs leading-normal font-sans">{{ c.texto }}</p>
+              </div>
+            </div>
+
+            <!-- Add Comment Form -->
+            <div class="flex gap-2 mt-3.5">
+              <input 
+                type="text" 
+                [(ngModel)]="novoComentario" 
+                placeholder="Adicionar nota técnica..." 
+                (keyup.enter)="addComment(selectedEvidencia)"
+                class="flex-1 bg-slate-950 border border-slate-800 focus:border-accent-500 text-slate-200 text-xs py-2 px-3 rounded-xl outline-none">
+              <button 
+                type="button" 
+                (click)="addComment(selectedEvidencia)" 
+                class="bg-slate-800 border border-slate-750 hover:bg-slate-700 text-slate-300 font-bold px-4 rounded-xl text-xs cursor-pointer select-none">
+                Enviar
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ADD EVIDENCE MODAL FORM -->
+  <div *ngIf="showAddForm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div (click)="showAddForm = false" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+
+    <!-- Modal Box -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 relative z-10 animate-fade-in shadow-2xl space-y-4">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 select-none">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Inserir Comprovante de Execução</h3>
+        <button type="button" (click)="showAddForm = false" class="text-slate-500 hover:text-white font-bold text-lg cursor-pointer">&times;</button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        
+        <!-- Projeto selector -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[9px] font-bold text-slate-450 uppercase select-none">Projeto Vinculado *</label>
+          <select 
+            [(ngModel)]="novaEvidenciaForm.projetoId" 
+            name="formProj" 
+            class="bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-slate-200 outline-none cursor-pointer">
+            <option *ngFor="let p of projetos" [value]="p.id">{{ p.nome }}</option>
+          </select>
+        </div>
+
+        <!-- Etapa selector (dynamic) -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[9px] font-bold text-slate-450 uppercase select-none">Etapa do Plano de Trabalho *</label>
+          <select 
+            [(ngModel)]="novaEvidenciaForm.etapa" 
+            name="formEtapa" 
+            class="bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-slate-200 outline-none cursor-pointer">
+            <option *ngFor="let e of formEtapas" [value]="e">{{ e }}</option>
+          </select>
+        </div>
+
+        <!-- Tipo -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[9px] font-bold text-slate-450 uppercase select-none">Tipo de Evidência *</label>
+          <select 
+            [(ngModel)]="novaEvidenciaForm.tipo" 
+            name="formTipo" 
+            class="bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-slate-200 outline-none cursor-pointer">
+            <option *ngFor="let t of tiposEvidencia" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+
+        <!-- Responsável -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[9px] font-bold text-slate-450 uppercase select-none">Responsável pelo Envio *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="novaEvidenciaForm.responsavel" 
+            name="formResp"
+            placeholder="Ex: Nome do Gestor" 
+            class="bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-slate-200 outline-none">
+        </div>
+
+        <!-- Localização -->
+        <div class="flex flex-col gap-1.5 sm:col-span-2">
+          <label class="text-[9px] font-bold text-slate-450 uppercase select-none">Local / Geolocalização (Opcional)</label>
+          <input 
+            type="text" 
+            [(ngModel)]="novaEvidenciaForm.localizacao" 
+            name="formLoc"
+            placeholder="Ex: Sede Social ou Latitude, Longitude" 
+            class="bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-slate-200 outline-none">
+        </div>
+
+        <!-- File selector (conditional for non-links) -->
+        <div *ngIf="novaEvidenciaForm.tipo !== 'Link Externo'" class="flex flex-col gap-1.5 sm:col-span-2">
+          <label class="text-[9px] font-bold text-slate-450 uppercase select-none">Upload do Arquivo Físico *</label>
+          
+          <div class="relative border-2 border-dashed border-slate-800 hover:border-accent-500/50 rounded-2xl p-6 text-center transition-colors cursor-pointer select-none bg-slate-950/20 group">
+            <input 
+              type="file" 
+              (change)="onFileSelected($event)" 
+              class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10">
+            
+            <svg class="w-8 h-8 text-slate-600 group-hover:text-accent-400 mx-auto mb-2.5 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <span class="text-xs text-slate-350 block font-semibold">
+              {{ selectedFile ? selectedFile.name : 'Selecionar Arquivo PDF, Imagem, Vídeo ou Planilha' }}
+            </span>
+            <span class="text-[10px] text-slate-500 block mt-1" *ngIf="selectedFile">
+              Tamanho: {{ (selectedFile.size / 1024 / 1024) | number:'1.1-2' }} MB
+            </span>
+          </div>
+        </div>
+
+        <!-- External Link field (conditional for Link Externo) -->
+        <div *ngIf="novaEvidenciaForm.tipo === 'Link Externo'" class="flex flex-col gap-1.5 sm:col-span-2">
+          <label class="text-[9px] font-bold text-slate-450 uppercase select-none">URL de Referência Externa *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="novaEvidenciaForm.arquivoUrl" 
+            name="formUrl"
+            placeholder="Ex: https://noticias.org/publicacao-civitas" 
+            class="bg-slate-950 border border-slate-800 focus:border-accent-500 rounded-xl py-2 px-3 text-slate-200 outline-none font-mono">
+        </div>
+
+        <!-- Uploading progress block -->
+        <div *ngIf="isUploading" class="sm:col-span-2 bg-slate-950/40 border border-slate-850 p-4.5 rounded-2xl select-none animate-fade-in space-y-2">
+          <div class="flex justify-between items-center text-[10px]">
+            <span class="text-slate-400 font-bold block">Enviando para o Supabase Storage...</span>
+            <span class="text-accent-450 font-black block font-mono">{{ uploadProgress }}%</span>
+          </div>
+          
+          <div class="w-full h-2 rounded-full bg-slate-950 overflow-hidden border border-slate-850 p-0.5">
+            <div 
+              class="h-full rounded-full bg-gradient-to-r from-accent-600 to-accent-400 transition-all duration-150" 
+              [style.width.%]="uploadProgress">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-800 select-none">
+        <button 
+          type="button" 
+          [disabled]="isUploading"
+          (click)="showAddForm = false" 
+          class="bg-slate-950 border border-slate-800 hover:bg-slate-900 text-slate-400 px-4 py-2 rounded-xl transition-colors cursor-pointer text-xs disabled:opacity-30 disabled:cursor-not-allowed">
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          [disabled]="isUploading"
+          (click)="submitForm()" 
+          class="bg-accent-600 hover:bg-accent-500 text-white font-bold px-5 py-2 rounded-xl transition-all cursor-pointer text-xs flex items-center gap-1 shadow-lg shadow-accent-600/10 disabled:opacity-30 disabled:cursor-not-allowed">
+          Enviar Evidência
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
