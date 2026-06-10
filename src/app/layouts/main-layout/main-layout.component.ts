@@ -64,9 +64,10 @@ export class MainLayoutComponent {
   async logout() {
     try {
       await this.supabaseService.signOut();
-      this.router.navigate(['/login']);
     } catch (e) {
       console.error('Erro ao deslogar:', e);
+    } finally {
+      this.router.navigate(['/login']);
     }
   }
 }

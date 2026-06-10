@@ -1,0 +1,620 @@
+<div class="space-y-6 max-w-7xl mx-auto py-6 animate-fade-in font-sans">
+  
+  <!-- Header / Breadcrumb Section -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-800/80 pb-6">
+    <div>
+      <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1.5 select-none">
+        <a routerLink="/dashboard" class="hover:text-primary-400">Dashboard</a>
+        <span>/</span>
+        <span class="text-slate-300">Editais</span>
+      </div>
+      <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
+        <svg class="w-7 h-7 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Editais & Oportunidades
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">Gerencie os editais de fomento e parcerias públicas para captação de recursos.</p>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-3">
+      <button 
+        *ngIf="currentView !== 'list'" 
+        (click)="viewList()" 
+        class="bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 px-4 py-2.5 rounded-xl font-semibold text-xs transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Voltar para Lista
+      </button>
+      <button 
+        *ngIf="currentView === 'list'" 
+        (click)="viewCreate()" 
+        class="bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white px-4.5 py-2.5 rounded-xl font-semibold text-xs shadow-lg shadow-primary-600/10 hover:shadow-primary-600/20 active:scale-[0.98] transition-all flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Cadastrar Edital
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW 1: LISTING -->
+  <div *ngIf="currentView === 'list'" class="space-y-6">
+    
+    <!-- Filter Panel -->
+    <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 space-y-4">
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
+        
+        <!-- Search bar -->
+        <div class="relative flex-1">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+            <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </span>
+          <input 
+            type="text" 
+            [(ngModel)]="searchQuery" 
+            placeholder="Pesquisar por título, órgão emissor ou tipo..." 
+            class="w-full bg-slate-950/40 border border-slate-800 focus:border-primary-500/80 focus:ring-1 focus:ring-primary-500 rounded-xl py-2.5 pl-10 pr-4 text-xs font-semibold text-slate-100 placeholder-slate-550 transition-all outline-none">
+        </div>
+
+        <!-- Dropdown filters -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          
+          <!-- Area -->
+          <div class="flex flex-col">
+            <select 
+              [(ngModel)]="filterArea" 
+              class="w-full bg-slate-950/40 border border-slate-800 focus:border-primary-500/80 rounded-xl py-2.5 px-3.5 text-xs font-semibold text-slate-300 outline-none cursor-pointer">
+              <option value="all">Todas as Áreas</option>
+              <option *ngFor="let area of areas" [value]="area">{{ area }}</option>
+            </select>
+          </div>
+
+          <!-- Status -->
+          <div class="flex flex-col">
+            <select 
+              [(ngModel)]="filterStatus" 
+              class="w-full bg-slate-950/40 border border-slate-800 focus:border-primary-500/80 rounded-xl py-2.5 px-3.5 text-xs font-semibold text-slate-300 outline-none cursor-pointer">
+              <option value="all">Todos os Status</option>
+              <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+
+          <!-- Prazo -->
+          <div class="flex flex-col">
+            <select 
+              [(ngModel)]="filterPrazo" 
+              class="w-full bg-slate-950/40 border border-slate-800 focus:border-primary-500/80 rounded-xl py-2.5 px-3.5 text-xs font-semibold text-slate-300 outline-none cursor-pointer">
+              <option value="all">Todos os Prazos</option>
+              <option value="active">Inscrições Abertas</option>
+              <option value="expired">Encerrados / Outros</option>
+            </select>
+          </div>
+
+        </div>
+
+        <!-- Reset filters button -->
+        <button 
+          *ngIf="searchQuery || filterArea !== 'all' || filterStatus !== 'all' || filterPrazo !== 'all'"
+          (click)="searchQuery = ''; filterArea = 'all'; filterStatus = 'all'; filterPrazo = 'all'"
+          class="text-xs font-bold text-slate-400 hover:text-white bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl hover:bg-slate-800 transition-colors shrink-0">
+          Limpar Filtros
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredEditais.length === 0" class="flex flex-col items-center justify-center text-center py-20 px-4 border border-dashed border-slate-800 rounded-3xl bg-slate-900/10">
+      <svg class="w-12 h-12 text-slate-700 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0V9a2 2 0 00-2-2H6a2 2 0 00-2 2v2m16 4h-3.88l-.512 2.56a1.5 1.5 0 01-1.472 1.207H9.864a1.5 1.5 0 01-1.472-1.207L7.88 15H4"/>
+      </svg>
+      <h3 class="text-base font-bold text-slate-300">Nenhum edital encontrado</h3>
+      <p class="text-xs text-slate-500 mt-1 max-w-sm">Tente redefinir os filtros de busca ou cadastre um novo edital de fomento no botão acima.</p>
+    </div>
+
+    <!-- Editais Grid -->
+    <div *ngIf="filteredEditais.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div *ngFor="let ed of filteredEditais" 
+           class="bg-slate-900/40 border border-slate-800/80 rounded-2xl hover:border-slate-700/60 p-6 flex flex-col justify-between transition-all duration-300 relative group overflow-hidden hover:shadow-xl hover:shadow-slate-950/20">
+        
+        <!-- Glow design -->
+        <div class="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-primary-500/3 blur-xl group-hover:bg-primary-500/8 transition-all duration-300"></div>
+
+        <div>
+          <!-- Top indicators -->
+          <div class="flex items-center justify-between mb-4">
+            <!-- Area badge -->
+            <span [ngClass]="{
+              'text-purple-400 bg-purple-500/10 border-purple-500/20': ed.area === 'Cultura',
+              'text-sky-400 bg-sky-500/10 border-sky-500/20': ed.area === 'Esporte',
+              'text-emerald-400 bg-emerald-500/10 border-emerald-500/20': ed.area === 'Educação',
+              'text-teal-400 bg-teal-500/10 border-teal-500/20': ed.area === 'Saúde',
+              'text-rose-400 bg-rose-500/10 border-rose-500/20': ed.area === 'Social',
+              'text-green-400 bg-green-500/10 border-green-500/20': ed.area === 'Meio Ambiente'
+            }" class="text-[10px] font-bold px-2 py-0.5 rounded-md border">
+              {{ ed.area }}
+            </span>
+
+            <!-- Status badge -->
+            <span [ngClass]="{
+              'text-emerald-400 bg-emerald-500/10 border-emerald-500/20': ed.status === 'Aberto',
+              'text-amber-400 bg-amber-500/10 border-amber-500/20': ed.status === 'Em Análise',
+              'text-sky-400 bg-sky-500/10 border-sky-500/20': ed.status === 'Concluído',
+              'text-rose-400 bg-rose-500/10 border-rose-500/20': ed.status === 'Cancelado'
+            }" class="text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider">
+              {{ ed.status }}
+            </span>
+          </div>
+
+          <!-- Title -->
+          <h2 class="text-sm font-bold text-slate-200 group-hover:text-white transition-colors line-clamp-2 h-10 mb-2 leading-tight">
+            {{ ed.titulo }}
+          </h2>
+
+          <!-- Publisher and type -->
+          <div class="space-y-1.5 text-xs text-slate-450 border-b border-slate-800/60 pb-4 mb-4 select-none">
+            <div class="flex items-center gap-2">
+              <svg class="w-3.5 h-3.5 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+              </svg>
+              <span class="truncate">{{ ed.orgao }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <svg class="w-3.5 h-3.5 text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M6 20h12a2 2 0 002-2V9a2 2 0 00-2-2h-1M9 21h6"/>
+              </svg>
+              <span>{{ ed.tipo }}</span>
+            </div>
+          </div>
+
+          <!-- Values & Deadline Details -->
+          <div class="grid grid-cols-2 gap-4 mb-5">
+            <div>
+              <div class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Recurso Total</div>
+              <div class="text-sm font-extrabold text-white mt-0.5">{{ formatCurrency(ed.valorDisponivel) }}</div>
+            </div>
+            <div>
+              <div class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Prazo Inscrição</div>
+              <div class="text-xs font-semibold text-slate-300 mt-1 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span>{{ ed.prazoInscricao | date:'dd/MM/yyyy':'UTC' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer / Action bar -->
+        <div class="border-t border-slate-800/80 pt-4 flex items-center justify-between gap-2">
+          <!-- Days remaining / alert indicator -->
+          <div class="text-[10px] font-bold">
+            <span 
+              [ngClass]="{
+                'text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20': isDeadlineClose(ed.prazoInscricao) && ed.status === 'Aberto',
+                'text-slate-400 bg-slate-950/40 px-2 py-0.5 rounded-md border border-slate-800': !isDeadlineClose(ed.prazoInscricao) || ed.status !== 'Aberto'
+              }">
+              {{ getDaysRemaining(ed.prazoInscricao) }}
+            </span>
+          </div>
+
+          <!-- Small buttons -->
+          <div class="flex items-center gap-1.5">
+            <button 
+              (click)="viewEdit(ed)"
+              class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors"
+              title="Editar Edital">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+              </svg>
+            </button>
+            <button 
+              (click)="deleteEdital(ed.id)"
+              class="text-rose-400 hover:text-rose-350 p-2 rounded-lg bg-rose-950/10 border border-rose-950/20 hover:border-rose-900/30 transition-colors"
+              title="Excluir Edital">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+            <button 
+              (click)="viewDetail(ed)" 
+              class="bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-1">
+              Detalhes
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- VIEW 2: DETAILS VIEW -->
+  <div *ngIf="currentView === 'detail' && selectedEdital" class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+    
+    <!-- Left Column: Primary Details (Span 2) -->
+    <div class="lg:col-span-2 space-y-6">
+      
+      <!-- Top Overview Banner -->
+      <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary-500/5 to-transparent pointer-events-none"></div>
+
+        <div class="flex items-center gap-3.5 mb-4">
+          <span [ngClass]="{
+            'text-purple-400 bg-purple-500/10 border-purple-500/20': selectedEdital.area === 'Cultura',
+            'text-sky-400 bg-sky-500/10 border-sky-500/20': selectedEdital.area === 'Esporte',
+            'text-emerald-400 bg-emerald-500/10 border-emerald-500/20': selectedEdital.area === 'Educação',
+            'text-teal-400 bg-teal-500/10 border-teal-500/20': selectedEdital.area === 'Saúde',
+            'text-rose-400 bg-rose-500/10 border-rose-500/20': selectedEdital.area === 'Social',
+            'text-green-400 bg-green-500/10 border-green-500/20': selectedEdital.area === 'Meio Ambiente'
+          }" class="text-xs font-bold px-2.5 py-0.5 rounded-lg border">
+            {{ selectedEdital.area }}
+          </span>
+          <span [ngClass]="{
+            'text-emerald-400 bg-emerald-500/10 border-emerald-500/20': selectedEdital.status === 'Aberto',
+            'text-amber-400 bg-amber-500/10 border-amber-500/20': selectedEdital.status === 'Em Análise',
+            'text-sky-400 bg-sky-500/10 border-sky-500/20': selectedEdital.status === 'Concluído',
+            'text-rose-400 bg-rose-500/10 border-rose-500/20': selectedEdital.status === 'Cancelado'
+          }" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider">
+            {{ selectedEdital.status }}
+          </span>
+        </div>
+
+        <h2 class="text-xl md:text-2xl font-black text-white leading-tight mb-3">{{ selectedEdital.titulo }}</h2>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs text-slate-400 select-none">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-600 font-bold uppercase tracking-wider text-[10px] w-24">Órgão Emissor:</span>
+            <span class="text-slate-200 font-semibold">{{ selectedEdital.orgao }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-600 font-bold uppercase tracking-wider text-[10px] w-24">Tipo Oportunidade:</span>
+            <span class="text-slate-200 font-semibold">{{ selectedEdital.tipo }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Requisitos -->
+      <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6">
+        <h3 class="text-base font-bold text-slate-100 mb-3 flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+          Requisitos de Habilitação
+        </h3>
+        <p class="text-xs text-slate-300 leading-relaxed bg-slate-950/20 rounded-2xl p-4 border border-slate-800/40">
+          {{ selectedEdital.requisitos || 'Sem requisitos específicos cadastrados.' }}
+        </p>
+      </div>
+
+      <!-- Documentos Obrigatórios -->
+      <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6">
+        <h3 class="text-base font-bold text-slate-100 mb-3 flex items-center gap-2">
+          <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          Documentos Obrigatórios
+        </h3>
+        
+        <div *ngIf="!selectedEdital.documentosObrigatorios || selectedEdital.documentosObrigatorios.length === 0" class="text-xs text-slate-500 py-2">
+          Nenhum documento exigido cadastrado.
+        </div>
+
+        <div *ngIf="selectedEdital.documentosObrigatorios && selectedEdital.documentosObrigatorios.length > 0" class="space-y-2.5">
+          <div *ngFor="let doc of selectedEdital.documentosObrigatorios" class="flex items-center gap-2.5 text-xs text-slate-350 p-2.5 rounded-xl bg-slate-950/20 border border-slate-800/30">
+            <svg class="w-4.5 h-4.5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>{{ doc }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Secondary Details / Information Panel -->
+    <div class="space-y-6">
+      
+      <!-- Key Stats / Value & Deadlines -->
+      <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-6">
+        <div>
+          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Recursos Disponíveis</span>
+          <span class="text-2xl font-black text-white tracking-tight mt-1.5 block">{{ formatCurrency(selectedEdital.valorDisponivel) }}</span>
+        </div>
+
+        <div class="space-y-3 pt-4 border-t border-slate-800/80">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-450">Publicação:</span>
+            <span class="font-bold text-slate-200">{{ selectedEdital.dataPublicacao | date:'dd/MM/yyyy':'UTC' }}</span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-450">Prazo Inscrição:</span>
+            <span class="font-bold text-slate-200">{{ selectedEdital.prazoInscricao | date:'dd/MM/yyyy':'UTC' }}</span>
+          </div>
+        </div>
+
+        <!-- Gauge/Remaining message -->
+        <div [class]="isDeadlineClose(selectedEdital.prazoInscricao) && selectedEdital.status === 'Aberto' ? 'bg-rose-500/10 border border-rose-500/20 text-rose-400' : 'bg-slate-950/40 border border-slate-800 text-slate-300'" 
+             class="p-4 rounded-2xl flex items-center justify-center text-xs font-bold gap-2 text-center">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          {{ getDaysRemaining(selectedEdital.prazoInscricao) }}
+        </div>
+      </div>
+
+      <!-- Anexos/Arquivos -->
+      <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6">
+        <h3 class="text-base font-bold text-slate-100 mb-4 flex items-center gap-2 select-none">
+          <svg class="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+          </svg>
+          Documentos & Anexos
+        </h3>
+
+        <div *ngIf="!selectedEdital.anexos || selectedEdital.anexos.length === 0" class="text-xs text-slate-500 py-2">
+          Nenhum anexo disponível.
+        </div>
+
+        <div *ngIf="selectedEdital.anexos && selectedEdital.anexos.length > 0" class="space-y-2">
+          <div *ngFor="let file of selectedEdital.anexos" class="flex items-center justify-between p-3 rounded-2xl bg-slate-950/20 border border-slate-800/30 hover:border-slate-700/40 transition-colors">
+            <div class="flex items-center gap-2.5 truncate">
+              <svg class="w-5.5 h-5.5 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+              </svg>
+              <div class="truncate text-xs font-semibold text-slate-200">
+                {{ file }}
+                <span class="text-[9px] text-slate-500 font-bold block">Download Mock PDF</span>
+              </div>
+            </div>
+            <button class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-900 transition-colors shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Panel -->
+      <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-5 space-y-2.5">
+        <button 
+          (click)="viewEdit(selectedEdital)" 
+          class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-250 py-3 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2">
+          <svg class="w-4.5 h-4.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+          </svg>
+          Editar Cadastro
+        </button>
+        <button 
+          (click)="deleteEdital(selectedEdital.id)" 
+          class="w-full bg-rose-950/15 hover:bg-rose-950/30 border border-rose-950/20 hover:border-rose-900/40 text-rose-450 hover:text-rose-400 py-3 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2">
+          <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+          Excluir Edital
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- VIEW 3 & 4: CREATE & EDIT VIEW -->
+  <div *ngIf="currentView === 'create' || currentView === 'edit'" class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 max-w-4xl mx-auto animate-fade-in">
+    
+    <div class="mb-6 border-b border-slate-800/60 pb-4">
+      <h2 class="text-lg font-bold text-white">
+        {{ currentView === 'create' ? 'Cadastrar Novo Edital' : 'Editar Edital' }}
+      </h2>
+      <p class="text-xs text-slate-400 mt-1">Preencha as informações regulamentares da chamada de fomento.</p>
+    </div>
+
+    <form (ngSubmit)="currentView === 'create' ? saveNewEdital() : saveEditEdital()" class="space-y-6">
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        
+        <!-- Left Side fields -->
+        <div class="space-y-4">
+          <!-- Titulo -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-slate-400">Título do Edital *</label>
+            <input 
+              type="text" 
+              [(ngModel)]="editalForm.titulo" 
+              name="titulo"
+              required 
+              placeholder="Ex: Edital Cultura Viva 2026"
+              class="bg-slate-950/40 border border-slate-800 focus:border-primary-500 rounded-xl py-2.5 px-3.5 text-xs text-slate-200 placeholder-slate-650 outline-none transition-all">
+          </div>
+
+          <!-- Orgao -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-slate-400">Órgão / Publicador *</label>
+            <input 
+              type="text" 
+              [(ngModel)]="editalForm.orgao" 
+              name="orgao"
+              required 
+              placeholder="Ex: Secretaria Estadual de Cultura"
+              class="bg-slate-950/40 border border-slate-800 focus:border-primary-500 rounded-xl py-2.5 px-3.5 text-xs text-slate-200 placeholder-slate-650 outline-none transition-all">
+          </div>
+
+          <!-- Tipo edital -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-slate-400">Tipo de Edital</label>
+            <input 
+              type="text" 
+              [(ngModel)]="editalForm.tipo" 
+              name="tipo"
+              placeholder="Ex: Chamamento Público, Fomento, Apoio"
+              class="bg-slate-950/40 border border-slate-800 focus:border-primary-500 rounded-xl py-2.5 px-3.5 text-xs text-slate-200 placeholder-slate-650 outline-none transition-all">
+          </div>
+
+          <!-- Area -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-slate-400">Área de Atuação *</label>
+            <select 
+              [(ngModel)]="editalForm.area" 
+              name="area"
+              class="bg-slate-950/40 border border-slate-800 focus:border-primary-500 rounded-xl py-2.5 px-3.5 text-xs text-slate-300 outline-none cursor-pointer">
+              <option *ngFor="let area of areas" [value]="area">{{ area }}</option>
+            </select>
+          </div>
+
+          <!-- Valor Disponivel -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-slate-400">Valor Disponível (R$)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="editalForm.valorDisponivel" 
+              name="valorDisponivel"
+              placeholder="0"
+              class="bg-slate-950/40 border border-slate-800 focus:border-primary-500 rounded-xl py-2.5 px-3.5 text-xs text-slate-200 placeholder-slate-650 outline-none transition-all">
+          </div>
+        </div>
+
+        <!-- Right Side fields -->
+        <div class="space-y-4">
+          <!-- Data Publicacao -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-slate-400">Data de Publicação</label>
+            <input 
+              type="date" 
+              [(ngModel)]="editalForm.dataPublicacao" 
+              name="dataPublicacao"
+              class="bg-slate-950/40 border border-slate-800 focus:border-primary-500 rounded-xl py-2.5 px-3.5 text-xs text-slate-200 outline-none cursor-pointer [color-scheme:dark]">
+          </div>
+
+          <!-- Prazo Inscricao -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-slate-400">Prazo de Inscrição *</label>
+            <input 
+              type="date" 
+              [(ngModel)]="editalForm.prazoInscricao" 
+              name="prazoInscricao"
+              required
+              class="bg-slate-950/40 border border-slate-800 focus:border-primary-500 rounded-xl py-2.5 px-3.5 text-xs text-slate-200 outline-none cursor-pointer [color-scheme:dark]">
+          </div>
+
+          <!-- Status -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-slate-400">Status *</label>
+            <select 
+              [(ngModel)]="editalForm.status" 
+              name="status"
+              class="bg-slate-950/40 border border-slate-800 focus:border-primary-500 rounded-xl py-2.5 px-3.5 text-xs text-slate-300 outline-none cursor-pointer">
+              <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+
+          <!-- Requisitos -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-bold text-slate-400">Requisitos de Participação</label>
+            <textarea 
+              [(ngModel)]="editalForm.requisitos" 
+              name="requisitos"
+              rows="4" 
+              placeholder="Digite as certidões e qualificações necessárias para submissão..."
+              class="bg-slate-950/40 border border-slate-800 focus:border-primary-500 rounded-xl py-2 px-3.5 text-xs text-slate-200 placeholder-slate-650 outline-none transition-all resize-none"></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Mandatory Documents manager -->
+      <div class="border-t border-slate-800/60 pt-5 space-y-3">
+        <label class="text-xs font-bold text-slate-400 block">Gerenciar Documentos Obrigatórios</label>
+        
+        <div class="flex gap-2">
+          <input 
+            type="text" 
+            [(ngModel)]="tempDoc" 
+            name="tempDoc"
+            placeholder="Ex: Certidão de Débito, Ata da Assembleia..."
+            class="flex-1 bg-slate-950/40 border border-slate-800 focus:border-primary-500 rounded-xl py-2.5 px-3.5 text-xs text-slate-200 placeholder-slate-650 outline-none transition-all">
+          <button 
+            type="button" 
+            (click)="addDocument()"
+            class="bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0">
+            Adicionar Doc
+          </button>
+        </div>
+
+        <div class="flex flex-wrap gap-2 pt-2">
+          <span 
+            *ngFor="let doc of editalForm.documentosObrigatorios; let i = index" 
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300">
+            {{ doc }}
+            <button 
+              type="button" 
+              (click)="removeDocument(i)" 
+              class="text-slate-500 hover:text-slate-300 shrink-0">
+              &times;
+            </button>
+          </span>
+        </div>
+      </div>
+
+      <!-- Attachments manager -->
+      <div class="border-t border-slate-800/60 pt-5 space-y-3">
+        <label class="text-xs font-bold text-slate-400 block">Anexar Documentos de Referência (.pdf, .docx, .xlsx)</label>
+        
+        <div class="flex gap-2">
+          <input 
+            type="text" 
+            [(ngModel)]="tempAnexo" 
+            name="tempAnexo"
+            placeholder="Ex: Termo_Referencia_Edital.pdf"
+            class="flex-1 bg-slate-950/40 border border-slate-800 focus:border-primary-500 rounded-xl py-2.5 px-3.5 text-xs text-slate-200 placeholder-slate-650 outline-none transition-all">
+          <button 
+            type="button" 
+            (click)="addAttachment()"
+            class="bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0">
+            Simular Anexo
+          </button>
+        </div>
+
+        <div class="flex flex-wrap gap-2 pt-2">
+          <span 
+            *ngFor="let file of editalForm.anexos; let i = index" 
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-300">
+            {{ file }}
+            <button 
+              type="button" 
+              (click)="removeAttachment(i)" 
+              class="text-slate-500 hover:text-slate-300 shrink-0">
+              &times;
+            </button>
+          </span>
+        </div>
+      </div>
+
+      <!-- Bottom action bar -->
+      <div class="border-t border-slate-800/60 pt-5 flex items-center justify-end gap-3.5">
+        <button 
+          type="button" 
+          (click)="viewList()" 
+          class="bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-slate-200 px-5 py-3 rounded-xl font-bold text-xs transition-colors">
+          Cancelar
+        </button>
+        <button 
+          type="submit" 
+          class="bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg shadow-primary-600/10 hover:shadow-primary-600/20 active:scale-[0.98] transition-all">
+          {{ currentView === 'create' ? 'Criar Edital' : 'Salvar Alterações' }}
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</div>

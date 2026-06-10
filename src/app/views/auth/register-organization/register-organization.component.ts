@@ -59,9 +59,10 @@ export class RegisterOrganizationComponent {
   async logout() {
     try {
       await this.supabaseService.signOut();
-      this.router.navigate(['/login']);
     } catch (e) {
       console.error('Erro ao sair:', e);
+    } finally {
+      this.router.navigate(['/login']);
     }
   }
 }

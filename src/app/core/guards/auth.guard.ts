@@ -1,23 +1,20 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { SupabaseService } from '../services/supabase.service';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { filter, firstValueFrom } from 'rxjs';
 
 const waitLoading = async (supabaseService: SupabaseService) => {
   if (supabaseService.isLoading()) {
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(() => {
-        clearInterval(interval);
-        resolve();
-      }, 3000);
-
-      const interval = setInterval(() => {
-        if (!supabaseService.isLoading()) {
-          clearTimeout(timeout);
-          clearInterval(interval);
-          resolve();
-        }
-      }, 50);
-    });
+    try {
+      await firstValueFrom(
+        toObservable(supabaseService.isLoading).pipe(
+          filter(loading => !loading)
+        )
+      );
+    } catch (e) {
+      console.warn('WaitLoading error:', e);
+    }
   }
 };
 
