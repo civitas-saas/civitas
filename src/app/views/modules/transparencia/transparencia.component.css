@@ -1,0 +1,120 @@
+/* Transparência Module Styling & Micro-interactions */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom Dropdown select option styling */
+select option {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+/* Custom scrollbar for scrollable lists */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.3);
+}
+
+/* Zoom interactive elements */
+button, a {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bg-slate-900\/40 {
+  backdrop-filter: blur(12px);
+}
+
+/* Hover effects for cards */
+.hover\:shadow-xl:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+/* Inner borders */
+.bg-slate-850 {
+  background-color: rgba(30, 41, 59, 0.5);
+}
+
+.border-slate-850 {
+  border-color: rgba(30, 41, 59, 0.7);
+}
+
+.text-slate-550 {
+  color: rgb(100, 116, 139);
+}
+
+.text-slate-450 {
+  color: rgb(148, 163, 184);
+}
+
+.text-emerald-450 {
+  color: #10b981;
+}
+
+.text-amber-450 {
+  color: #f59e0b;
+}
+
+.text-rose-450 {
+  color: #f43f5e;
+}
+
+/* Timbrada A4 Report Sheet Styling */
+#print-sheet {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Print CSS Configurations */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Hide all elements on the screen except the print sheet */
+  body > :not(#print-sheet) {
+    display: none !important;
+  }
+
+  /* Make sure the page wrapper and root are also clean */
+  app-root, main, div, header, aside {
+    display: none !important;
+  }
+
+  #print-sheet {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none !important;
+  }
+}

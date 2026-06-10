@@ -1,37 +1,291 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { SupabaseService } from '../../../core/services/supabase.service';
+
+export interface CertidaoInstituicao {
+  nome: string;
+  emissor: string;
+  validade: string;
+  status: 'Regular' | 'Expirada';
+  comprovanteUrl: string;
+}
+
+export interface ProjetoPublico {
+  id: string;
+  nome: string;
+  fomentoOrigem: string;
+  centroCusto: string;
+  orcamentoAprovado: number;
+  orcamentoExecutado: number;
+  dataInicio: string;
+  dataFim: string;
+  statusPrestacao: string;
+}
+
+export interface GastoPublico {
+  id: string;
+  projetoNome: string;
+  data: string;
+  descricao: string;
+  valor: number;
+  categoria: string;
+  notaFiscal: string;
+}
 
 @Component({
   selector: 'app-transparencia',
   standalone: true,
-  imports: [CommonModule, RouterLink],
-  template: `
-    <div class="space-y-6 max-w-4xl mx-auto py-10 animate-fade-in font-sans">
-      <div class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden">
-        <!-- Glow design -->
-        <div class="absolute -right-16 -top-16 w-32 h-32 rounded-full bg-accent-500/5 blur-xl"></div>
-        
-        <div class="w-16 h-16 rounded-2xl bg-accent-500/10 border border-accent-500/20 text-accent-400 flex items-center justify-center mx-auto mb-6">
-          <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-        </div>
-        
-        <h1 class="text-2xl font-bold text-white mb-2">Portal de Transparência Publico</h1>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent-500/10 text-accent-400 border border-accent-500/20 mb-6">
-          Estrutura Preparada
-        </span>
-        
-        <p class="text-slate-400 text-sm max-w-lg mx-auto mb-8 leading-relaxed">
-          Configure a página pública de prestação de contas da sua organização. Disponibilize de forma organizada e visual o andamento de seus projetos, editais vinculados, valores recebidos e relatórios de auditoria, atendendo à Lei de Acesso à Informação.
-        </p>
-        
-        <div class="flex justify-center gap-4">
-          <a routerLink="/dashboard" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-5 py-3 rounded-xl font-semibold text-xs transition-colors">
-            Voltar ao Dashboard
-          </a>
-        </div>
-      </div>
-    </div>
-  `
+  imports: [CommonModule, FormsModule],
+  templateUrl: './transparencia.component.html',
+  styleUrl: './transparencia.component.css'
 })
-export class TransparenciaComponent {}
+export class TransparenciaComponent {
+  public supabaseService = inject(SupabaseService);
+
+  // States
+  public buscaGasto: string = '';
+  public filtroProjetoGasto: string = '';
+  public showReportModal: boolean = false;
+  public selectedProjectForReport: ProjetoPublico | null = null;
+  public reportType: 'Parcial' | 'Final' = 'Final';
+
+  // Institution profile details
+  public orgCnpj: string = '45.892.124/0001-88';
+  public orgNome: string = 'Instituto Civitas pelo Desenvolvimento Social';
+  public seloRating: string = 'A+ Selo Ouro';
+
+  // Organization's own regularity certs (Compliance info)
+  public certidoes: CertidaoInstituicao[] = [
+    {
+      nome: 'Tributos Federais e Dívida Ativa da União',
+      emissor: 'Receita Federal do Brasil / PGFN',
+      validade: '2026-11-20',
+      status: 'Regular',
+      comprovanteUrl: 'cnd_federal_instituto_2026.pdf'
+    },
+    {
+      nome: 'Certificado de Regularidade do FGTS (CRF)',
+      emissor: 'Caixa Econômica Federal',
+      validade: '2026-08-15',
+      status: 'Regular',
+      comprovanteUrl: 'crf_fgts_instituto_2026.pdf'
+    },
+    {
+      nome: 'Certidão Negativa de Débitos Trabalhistas (CNDT)',
+      emissor: 'Tribunal Superior do Trabalho / JT',
+      validade: '2026-10-05',
+      status: 'Regular',
+      comprovanteUrl: 'cndt_trabalhista_instituto_2026.pdf'
+    },
+    {
+      nome: 'Certidão de Tributos Mobiliários e Imobiliários',
+      emissor: 'Secretaria Municipal da Fazenda',
+      validade: '2026-09-12',
+      status: 'Regular',
+      comprovanteUrl: 'cnd_municipal_instituto_2026.pdf'
+    }
+  ];
+
+  // List of active public projects
+  public projetos: ProjetoPublico[] = [
+    {
+      id: 'proj-1',
+      nome: 'Inclusão Digital para Jovens de Baixa Renda',
+      fomentoOrigem: 'Fundação Itaú',
+      centroCusto: 'CC-101',
+      orcamentoAprovado: 180000,
+      orcamentoExecutado: 64282,
+      dataInicio: '2026-03-01',
+      dataFim: '2026-11-30',
+      statusPrestacao: 'Em Preparação'
+    },
+    {
+      id: 'proj-2',
+      nome: 'Alfabetização Cidadã para Adultos',
+      fomentoOrigem: 'Prefeitura de São Paulo',
+      centroCusto: 'CC-102',
+      orcamentoAprovado: 90000,
+      orcamentoExecutado: 90000,
+      dataInicio: '2025-06-01',
+      dataFim: '2026-02-15',
+      statusPrestacao: 'Aprovada'
+    },
+    {
+      id: 'proj-3',
+      nome: 'Esporte e Lazer no Bairro',
+      fomentoOrigem: 'Ministério do Esporte',
+      centroCusto: 'CC-103',
+      orcamentoAprovado: 250000,
+      orcamentoExecutado: 0,
+      dataInicio: '2026-06-01',
+      dataFim: '2027-05-31',
+      statusPrestacao: 'Enviada'
+    },
+    {
+      id: 'proj-4',
+      nome: 'Reciclagem de Resíduos e Sustentabilidade',
+      fomentoOrigem: 'Fundo Verde Ambiental',
+      centroCusto: 'CC-104',
+      orcamentoAprovado: 180000,
+      orcamentoExecutado: 18000,
+      dataInicio: '2026-01-15',
+      dataFim: '2026-08-31',
+      statusPrestacao: 'Corrigir Pendências'
+    }
+  ];
+
+  // Public ledger of approved expenses
+  public gastos: GastoPublico[] = [
+    {
+      id: 'g-1',
+      projetoNome: 'Inclusão Digital para Jovens de Baixa Renda',
+      data: '2026-03-22',
+      descricao: 'Compra de 15 computadores e roteador corporativo',
+      valor: 48000,
+      categoria: 'Equipamentos',
+      notaFiscal: 'NF-88492'
+    },
+    {
+      id: 'g-2',
+      projetoNome: 'Inclusão Digital para Jovens de Baixa Renda',
+      data: '2026-05-10',
+      descricao: 'Honorários docentes - Módulo I (Lógica de Prog.)',
+      valor: 12000,
+      categoria: 'Recursos Humanos',
+      notaFiscal: 'RPA-223'
+    },
+    {
+      id: 'g-3',
+      projetoNome: 'Inclusão Digital para Jovens de Baixa Renda',
+      data: '2026-04-10',
+      descricao: 'Locação do laboratório de informática',
+      valor: 4282,
+      categoria: 'Serviços de Terceiros',
+      notaFiscal: 'NF-0192'
+    },
+    {
+      id: 'g-4',
+      projetoNome: 'Alfabetização Cidadã para Adultos',
+      data: '2025-06-08',
+      descricao: 'Aquisição de material didático e apostilas',
+      valor: 4000,
+      categoria: 'Material Didático',
+      notaFiscal: 'NF-5541'
+    },
+    {
+      id: 'g-5',
+      projetoNome: 'Alfabetização Cidadã para Adultos',
+      data: '2025-11-28',
+      descricao: 'Pagamento professores de letramento noturno',
+      valor: 46000,
+      categoria: 'Recursos Humanos',
+      notaFiscal: 'RPA-882'
+    },
+    {
+      id: 'g-6',
+      projetoNome: 'Alfabetização Cidadã para Adultos',
+      data: '2026-02-12',
+      descricao: 'Auditoria externa de contas e balanços',
+      valor: 40000,
+      categoria: 'Custos Administrativos',
+      notaFiscal: 'NF-9988'
+    },
+    {
+      id: 'g-7',
+      projetoNome: 'Reciclagem de Resíduos e Sustentabilidade',
+      data: '2026-05-02',
+      descricao: 'Treinamento das Cooperativas Locais',
+      valor: 18000,
+      categoria: 'Serviços de Terceiros',
+      notaFiscal: 'NF-0982'
+    }
+  ];
+
+  // ----------------------------------------------------
+  // GETTERS & COMPUTED PROPERTIES
+  // ----------------------------------------------------
+  public get filteredGastos(): GastoPublico[] {
+    return this.gastos.filter(g => {
+      const matchProj = !this.filtroProjetoGasto || g.projetoNome === this.filtroProjetoGasto;
+      const search = this.buscaGasto.toLowerCase().trim();
+      const matchSearch = !search ||
+        g.descricao.toLowerCase().includes(search) ||
+        g.projetoNome.toLowerCase().includes(search) ||
+        g.categoria.toLowerCase().includes(search) ||
+        g.notaFiscal.toLowerCase().includes(search);
+      return matchProj && matchSearch;
+    });
+  }
+
+  public get totalRecursosRecebidos(): number {
+    return this.projetos.reduce((sum, p) => sum + p.orcamentoAprovado, 0);
+  }
+
+  public get totalRecursosExecutados(): number {
+    return this.projetos.reduce((sum, p) => sum + p.orcamentoExecutado, 0);
+  }
+
+  public get countProjetosAtivos(): number {
+    return this.projetos.length;
+  }
+
+  public get countCertidoesValidas(): number {
+    return this.certidoes.filter(c => c.status === 'Regular').length;
+  }
+
+  // ----------------------------------------------------
+  // REPORT DIALOG ACTIONS
+  // ----------------------------------------------------
+  public openReport(p: ProjetoPublico, type: 'Parcial' | 'Final'): void {
+    this.selectedProjectForReport = p;
+    this.reportType = type;
+    this.showReportModal = true;
+  }
+
+  public closeReport(): void {
+    this.selectedProjectForReport = null;
+    this.showReportModal = false;
+  }
+
+  public printReport(): void {
+    window.print();
+  }
+
+  public downloadDocSimulated(fileName: string): void {
+    alert(`Simulação: Baixando cópia oficial em PDF da certidão "${fileName}"`);
+  }
+
+  // ----------------------------------------------------
+  // MATH & FORMATTING HELPERS
+  // ----------------------------------------------------
+  public getPercentBudget(p: ProjetoPublico): number {
+    if (!p.orcamentoAprovado) return 0;
+    return Math.min(Math.round((p.orcamentoExecutado / p.orcamentoAprovado) * 100), 100);
+  }
+
+  public formatCurrency(val: number): string {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      maximumFractionDigits: 0
+    }).format(val);
+  }
+
+  public formatCurrencyDecimal(val: number): string {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2
+    }).format(val);
+  }
+
+  // Categories helper compilation for public report preview
+  public getCategoryPublicTotal(cat: string): number {
+    if (!this.selectedProjectForReport) return 0;
+    const projName = this.selectedProjectForReport.nome;
+    return this.gastos
+      .filter(g => g.projetoNome === projName && g.categoria === cat)
+      .reduce((sum, g) => sum + g.valor, 0);
+  }
+}
